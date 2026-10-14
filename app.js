@@ -7,6 +7,8 @@ const db = createClient('https://vrnxohudtrcxmcngvhne.supabase.co', 'sb_publisha
 //LOGIN/SIGNUP
 
 //Getting Elements
+const authScreen = document.getElementById("auth-screen")
+const appScreen = document.getElementById("app-screen")
 const signUpButton = document.getElementById("sign-up-button")
 const logInButton = document.getElementById("log-in-button")
 const signUpDiv = document.getElementById("signup")
@@ -72,19 +74,36 @@ signupForm.addEventListener("submit", async (e) => {
   await signUpNewUser(email, password)
 })
 
+db.auth.onAuthStateChange((events, session) => {
+  if(session){
+    authScreen.style.display = "none"
+    appScreen.style.display = "block"
+    console.log("Logged in as: " + session.user.email)
+  } else {
+    authScreen.style.display = "block"
+    appScreen.style.display = "none"
+  }
+})
+
 async function signUpNewUser(authEmail, authPassword) {
-  const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await db.auth.signUp({
     email: authEmail,
-    password: authPassword/*,
+    password: authPassword,/*
     options: {
       emailRedirectTo: 'https://example.com/welcome',
     },*/
   })
+  if(error){
+    alert("Sign up error: " + error.message)
+  }
 }
 
 async function signInWithEmail(authEmail, authPassword) {
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await db.auth.signInWithPassword({
     email: authEmail,
     password: authPassword,
   })
+  if(error){
+    alert("Sign in error: " + error.message)
+  }
 }
