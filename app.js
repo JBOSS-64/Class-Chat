@@ -98,6 +98,10 @@ async function signUpNewUser(authEmail, authPassword) {
   }
 }
 
+async function signOut() {
+  await db.auth.signOut({ scope: 'local' })
+}
+
 async function signInWithEmail(authEmail, authPassword) {
   const { data, error } = await db.auth.signInWithPassword({
     email: authEmail,
