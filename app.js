@@ -129,3 +129,15 @@ async function createClass(className, classSubject){
 
   console.log("Class was sucsessfully created")
 }
+
+async function joinClass(classId){
+  const { data: { user } } = await db.auth.getUser();
+  const { error: joinError } = await db.from("class_members").insert({user_id: user.id, class_id: classId})
+
+  if (joinError){
+    console.error("Failed to join class: " + joinError.message)
+    return
+  }
+
+  console.log("Joined Class Sucsessfully")
+}
