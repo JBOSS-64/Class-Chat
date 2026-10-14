@@ -111,3 +111,21 @@ async function signInWithEmail(authEmail, authPassword) {
 async function signOut() {
   await db.auth.signOut({ scope: 'local' })
 }
+
+
+//DATA TABLE MANIPULATION FUNCTIONS
+
+async function createClass(className, classSubject){
+  const { data: {user} } = await db.auth.getUser();
+  const { data: classData, error: classError } = await db.from("classes").insert({creator_id: user.id, class_name: className, subject: classSubject}).select().single()
+  if(classError){
+    console.error("Failed to create class: " + classError.message)
+    return
+  }
+  const { error: addMemberError } = await db.from("class_members").insert({user_id: user.id, class_id: classData.class_id}) 
+  if(addMemberError){
+    console.error("Failed to add creator to class: " + addMemberError.message)
+  }
+
+  console.log("Class was sucsessfully created")
+}
