@@ -56,7 +56,7 @@ loginForm.addEventListener("submit", async (e) => {
   e.preventDefault()
 
   const email = loginEmail.value
-  const password = loginEmail.value
+  const password = loginPassword.value
 
   await signInWithEmail(email, password)
 })
@@ -98,10 +98,6 @@ async function signUpNewUser(authEmail, authPassword) {
   }
 }
 
-async function signOut() {
-  await db.auth.signOut({ scope: 'local' })
-}
-
 async function signInWithEmail(authEmail, authPassword) {
   const { data, error } = await db.auth.signInWithPassword({
     email: authEmail,
@@ -110,4 +106,8 @@ async function signInWithEmail(authEmail, authPassword) {
   if(error){
     alert("Sign in error: " + error.message)
   }
+}
+
+async function signOut() {
+  await db.auth.signOut({ scope: 'local' })
 }
