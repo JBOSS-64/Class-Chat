@@ -1,0 +1,23 @@
+body{
+    font-family: Arial, Helvetica, sans-serif;
+}
+form{
+    display: flex;
+    flex-direction: column;
+    width: 500px;
+    gap: 10px;
+}
+.link-button {
+    background: none;
+    border: none;
+    color: #0066cc; /* Standard link blue */
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    font-size: inherit;
+    font: inherit;
+}
+
+.link-button:hover {
+    color: #004080; /* Darker blue on hover */
+}
