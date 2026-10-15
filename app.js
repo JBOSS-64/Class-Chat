@@ -4,6 +4,27 @@ const { createClient } = supabase
 // Create a single supabase client for interacting with your database
 const db = createClient('https://vrnxohudtrcxmcngvhne.supabase.co', 'sb_publishable_Ogs__3UblsqCPwt8pRDe1A_5rmJvxvp')
 
+//Auto login handling
+let currentUserId = null;
+
+async function initAuth(){
+  const { data: { session } } = await db.auth.getSession();
+  currentUserId = session?.user?.id || null;
+}
+initAuth()
+
+db.auth.onAuthStateChange((events, session) => {
+  if(session){
+    authScreen.style.display = "none"
+    appScreen.style.display = "block"
+    console.log("Logged in as: " + session.user.email)
+  } else {
+    authScreen.style.display = "block"
+    appScreen.style.display = "none"
+  }
+  currentUserId = session?.user?.id || null
+})
+
 //LOGIN/SIGNUP
 
 //Getting Elements
@@ -74,17 +95,6 @@ signupForm.addEventListener("submit", async (e) => {
   await signUpNewUser(email, password)
 })
 
-db.auth.onAuthStateChange((events, session) => {
-  if(session){
-    authScreen.style.display = "none"
-    appScreen.style.display = "block"
-    console.log("Logged in as: " + session.user.email)
-  } else {
-    authScreen.style.display = "block"
-    appScreen.style.display = "none"
-  }
-})
-
 async function signUpNewUser(authEmail, authPassword) {
   const { data, error } = await db.auth.signUp({
     email: authEmail,
@@ -113,24 +123,21 @@ async function signOut() {
   console.log("Signed out sucsessfully")
 }
 
-
 //DATA TABLE MANIPULATION FUNCTIONS
 
 
 //Add a class to the classes table
 async function createClass(className, classSubject){
-  //Get the user object from supabase
-  const { data: {user} } = await db.auth.getUser();
   //Inserts a class to the classes table with the specified parameters
   //Returns the object added to the table to the classData object with the .select()
   //The .single() makes it a single object instead of having it nested so that stuff like classData.class_id will work
-  const { data: classData, error: classError } = await db.from("classes").insert({creator_id: user.id, class_name: className, subject: classSubject}).select().single()
+  const { data: classData, error: classError } = await db.from("classes").insert({creator_id: currentUserId, class_name: className, subject: classSubject}).select().single()
   if(classError){
     console.error("Failed to create class: " + classError.message)
     return
   }
   //Adds the creator of the class to the class
-  const { error: addMemberError } = await db.from("class_members").insert({user_id: user.id, class_id: classData.class_id}) 
+  const { error: addMemberError } = await db.from("class_members").insert({user_id: currentUserId, class_id: classData.class_id}) 
   if(addMemberError){
     console.error("Failed to add creator to class: " + addMemberError.message)
   }
@@ -140,8 +147,7 @@ async function createClass(className, classSubject){
 
 //Adds a user to a class based on class id
 async function joinClass(classId){
-  const { data: { user } } = await db.auth.getUser();
-  const { error: joinError } = await db.from("class_members").insert({user_id: user.id, class_id: classId})
+  const { error: joinError } = await db.from("class_members").insert({user_id: currentUserId, class_id: classId})
 
   if (joinError){
     console.error("Failed to join class: " + joinError.message)
@@ -154,7 +160,6 @@ async function joinClass(classId){
 //Adds an assignment to a specific class
 //Supabase automatically adds the assignment to all users in that class
 async function addAssignment(classId, assignmentTitle, assignmentDescripton, dueDate){
-  const { data: { user } } = await db.auth.getUser();
   const { error: addAssignmentError } = await db.from("assignments").insert({class_id: classId, title: assignmentTitle, due_date: new Date(dueDate).toISOString(), description: assignmentDescripton})
 
   if (addAssignmentError){
@@ -167,10 +172,9 @@ async function addAssignment(classId, assignmentTitle, assignmentDescripton, due
 
 //Updates the users username in the profile table
 async function updateUsername(updatedUsername){
-  const { data: { user } } = await db.auth.getUser()
   //Updates the username for the user id specified by the .eq()
   //RLS prevents users from updating a different user's profile
-  const { error: updateUsernameError } = await db.from("profiles").update({username: updatedUsername}).eq("user_id", user.id)
+  const { error: updateUsernameError } = await db.from("profiles").update({username: updatedUsername}).eq("user_id", currentUserId)
   if (updateUsernameError){
     console.error("Failed to update username: " + updateUsernameError.message)
     return
@@ -180,22 +184,16 @@ async function updateUsername(updatedUsername){
 
 //Use this function to update all of the personal assignment details at once, likely when the user first enters the info
 async function updatePersonalAssignment(assignmentId, updatedNotes, updatedTime, updatedCompletionStatus){
-  const { data: { user } } = await db.auth.getUser()
-
   await Promise.all([
-    updatePersonalNotes(assignmentId, updatedNotes, user.id),
-    updatePersonalEstimatedTime(assignmentId, updatedTime, user.id),
-    updateIsComplete(assignmentId, updatedCompletionStatus, user.id)
+    updatePersonalNotes(assignmentId, updatedNotes),
+    updatePersonalEstimatedTime(assignmentId, updatedTime),
+    updateIsComplete(assignmentId, updatedCompletionStatus)
   ])
 }
 
 //Updates the notes for an assignment
-async function updatePersonalNotes(assignmentId, updatedNotes, userId){
-  if (!userId){
-    const { data: { user } } = await db.auth.getUser()
-    userId = user.id
-  }
-  const { error } = await db.from("user_assignments").update({notes: updatedNotes}).eq("assignment_id", assignmentId).eq("user_id", userId)
+async function updatePersonalNotes(assignmentId, updatedNotes){
+  const { error } = await db.from("user_assignments").update({notes: updatedNotes}).eq("assignment_id", assignmentId).eq("user_id", currentUserId)
   if (error){
     console.error("Failed to update notes: " + error.messages)
     return
@@ -204,12 +202,8 @@ async function updatePersonalNotes(assignmentId, updatedNotes, userId){
 }
 
 //Updates the estimated time for an assignment
-async function updatePersonalEstimatedTime(assignmentId, updatedTime, userId){
-  if (!userId){
-    const { data: { user } } = await db.auth.getUser()
-    userId = user.id
-  }
-  const { error } = await db.from("user_assignments").update({estimated_time: updatedTime}).eq("assignment_id", assignmentId).eq("user_id", userId)
+async function updatePersonalEstimatedTime(assignmentId, updatedTime){
+  const { error } = await db.from("user_assignments").update({estimated_time: updatedTime}).eq("assignment_id", assignmentId).eq("user_id", currentUserId)
   if(error){
     console.error("Failed ot update estimated time: " + error.message)
     return
@@ -218,12 +212,8 @@ async function updatePersonalEstimatedTime(assignmentId, updatedTime, userId){
 }
 
 //Updates whether or not the user has completed an assignment
-async function updateIsComplete(assignmentId, updatedCompletionStatus, userId){
-  if (!userId){
-    const { data: { user } } = await db.auth.getUser()
-    userId = user.id
-  }
-  const { error } = await db.from("user_assignments").update({is_complete: updatedCompletionStatus}).eq("assignment_id", assignmentId).eq("user_id", userId)
+async function updateIsComplete(assignmentId, updatedCompletionStatus){
+  const { error } = await db.from("user_assignments").update({is_complete: updatedCompletionStatus}).eq("assignment_id", assignmentId).eq("user_id", currentUserId)
   if (error){
     console.error("Failed ot update completion status: " + error.message)
     return
