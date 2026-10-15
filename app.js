@@ -220,3 +220,12 @@ async function updateIsComplete(assignmentId, updatedCompletionStatus){
   }
   console.log("Updated completion status sucsessfully")
 }
+
+async function sendMessage(classId, messageContent){
+  const { error } = await db.from("messages").insert({class_id: classId, text: messageContent})
+  if (error){
+    console.error("Failed to send message: " + error.message)
+    return
+  }
+  console.log("Sent message sucsessfully")
+}
