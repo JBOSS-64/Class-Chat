@@ -110,6 +110,7 @@ async function signInWithEmail(authEmail, authPassword) {
 
 async function signOut() {
   await db.auth.signOut({ scope: 'local' })
+  console.log("Signed out sucsessfully")
 }
 
 
@@ -147,10 +148,11 @@ async function joinClass(classId){
     return
   }
 
-  console.log("Joined Class Sucsessfully")
+  console.log("Joined class sucsessfully")
 }
 
 //Adds an assignment to a specific class
+//Supabase automatically adds the assignment to all users in that class
 async function addAssignment(classId, assignmentTitle, assignmentDescripton, dueDate){
   const { data: { user } } = await db.auth.getUser();
   const { error: addAssignmentError } = await db.from("assignments").insert({class_id: classId, title: assignmentTitle, due_date: new Date(dueDate).toISOString(), description: assignmentDescripton})
@@ -173,5 +175,58 @@ async function updateUsername(updatedUsername){
     console.error("Failed to update username: " + updateUsernameError.message)
     return
   }
-  console.log("Sucsessfully updated username")
+  console.log("Updated username sucsessfully")
+}
+
+//Use this function to update all of the personal assignment details at once, likely when the user first enters the info
+async function updatePersonalAssignment(assignmentId, updatedNotes, updatedTime, updatedCompletionStatus){
+  const { data: { user } } = await db.auth.getUser()
+
+  await Promise.all([
+    updatePersonalNotes(assignmentId, updatedNotes, user.id),
+    updatePersonalEstimatedTime(assignmentId, updatedTime, user.id),
+    updateIsComplete(assignmentId, updatedCompletionStatus, user.id)
+  ])
+}
+
+//Updates the notes for an assignment
+async function updatePersonalNotes(assignmentId, updatedNotes, userId){
+  if (!userId){
+    const { data: { user } } = await db.auth.getUser()
+    userId = user.id
+  }
+  const { error } = await db.from("user_assignments").update({notes: updatedNotes}).eq("assignment_id", assignmentId).eq("user_id", userId)
+  if (error){
+    console.error("Failed to update notes: " + error.messages)
+    return
+  }
+  console.log("Updated notes sucsessfully")
+}
+
+//Updates the estimated time for an assignment
+async function updatePersonalEstimatedTime(assignmentId, updatedTime, userId){
+  if (!userId){
+    const { data: { user } } = await db.auth.getUser()
+    userId = user.id
+  }
+  const { error } = await db.from("user_assignments").update({estimated_time: updatedTime}).eq("assignment_id", assignmentId).eq("user_id", userId)
+  if(error){
+    console.error("Failed ot update estimated time: " + error.message)
+    return
+  }
+  console.log("Updated estimated time sucsessfully")
+}
+
+//Updates whether or not the user has completed an assignment
+async function updateIsComplete(assignmentId, updatedCompletionStatus, userId){
+  if (!userId){
+    const { data: { user } } = await db.auth.getUser()
+    userId = user.id
+  }
+  const { error } = await db.from("user_assignments").update({is_complete: updatedCompletionStatus}).eq("assignment_id", assignmentId).eq("user_id", userId)
+  if (error){
+    console.error("Failed ot update completion status: " + error.message)
+    return
+  }
+  console.log("Updated completion status sucsessfully")
 }
