@@ -115,13 +115,20 @@ async function signOut() {
 
 //DATA TABLE MANIPULATION FUNCTIONS
 
+
+//Add a class to the classes table
 async function createClass(className, classSubject){
+  //Get the user object from supabase
   const { data: {user} } = await db.auth.getUser();
+  //Inserts a class to the classes table with the specified parameters
+  //Returns the object added to the table to the classData object with the .select()
+  //The .single() makes it a single object instead of having it nested so that stuff like classData.class_id will work
   const { data: classData, error: classError } = await db.from("classes").insert({creator_id: user.id, class_name: className, subject: classSubject}).select().single()
   if(classError){
     console.error("Failed to create class: " + classError.message)
     return
   }
+  //Adds the creator of the class to the class
   const { error: addMemberError } = await db.from("class_members").insert({user_id: user.id, class_id: classData.class_id}) 
   if(addMemberError){
     console.error("Failed to add creator to class: " + addMemberError.message)
@@ -130,6 +137,7 @@ async function createClass(className, classSubject){
   console.log("Class was sucsessfully created")
 }
 
+//Adds a user to a class based on class id
 async function joinClass(classId){
   const { data: { user } } = await db.auth.getUser();
   const { error: joinError } = await db.from("class_members").insert({user_id: user.id, class_id: classId})
@@ -142,6 +150,7 @@ async function joinClass(classId){
   console.log("Joined Class Sucsessfully")
 }
 
+//Adds an assignment to a specific class
 async function addAssignment(classId, assignmentTitle, assignmentDescripton, dueDate){
   const { data: { user } } = await db.auth.getUser();
   const { error: addAssignmentError } = await db.from("assignments").insert({class_id: classId, title: assignmentTitle, due_date: new Date(dueDate).toISOString(), description: assignmentDescripton})
@@ -152,4 +161,17 @@ async function addAssignment(classId, assignmentTitle, assignmentDescripton, due
   }
 
   console.log("Added assignment sucsessfully")
+}
+
+//Updates the users username in the profile table
+async function updateUsername(updatedUsername){
+  const { data: { user } } = await db.auth.getUser()
+  //Updates the username for the user id specified by the .eq()
+  //RLS prevents users from updating a different user's profile
+  const { error: updateUsernameError } = await db.from("profiles").update({username: updatedUsername}).eq("user_id", user.id)
+  if (updateUsernameError){
+    console.error("Failed to update username: " + updateUsernameError.message)
+    return
+  }
+  console.log("Sucsessfully updated username")
 }
