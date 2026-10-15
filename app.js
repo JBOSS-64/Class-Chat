@@ -141,3 +141,15 @@ async function joinClass(classId){
 
   console.log("Joined Class Sucsessfully")
 }
+
+async function addAssignment(classId, assignmentTitle, assignmentDescripton, dueDate){
+  const { data: { user } } = await db.auth.getUser();
+  const { error: addAssignmentError } = await db.from("assignments").insert({class_id: classId, title: assignmentTitle, due_date: new Date(dueDate).toISOString(), description: assignmentDescripton})
+
+  if (addAssignmentError){
+    console.error("Failed to add assignment: " + addAssignmentError.message)
+    return
+  }
+
+  console.log("Added assignment sucsessfully")
+}
