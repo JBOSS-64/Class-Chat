@@ -221,6 +221,7 @@ async function updateIsComplete(assignmentId, updatedCompletionStatus){
   console.log("Updated completion status sucsessfully")
 }
 
+//Sends a message to a specific class
 async function sendMessage(classId, messageContent){
   const { error } = await db.from("messages").insert({class_id: classId, text: messageContent})
   if (error){
@@ -228,4 +229,16 @@ async function sendMessage(classId, messageContent){
     return
   }
   console.log("Sent message sucsessfully")
+}
+
+//Gets the classes the user is enrolled in
+//Returns class_id, class_name, created_at, creator_id, subject, as well as the class_members array which has user_id and class_id
+async function getClasses(){
+  const { data, error } = await db.from("classes").select("*, class_members(*)").eq("class_members.user_id", currentUserId)
+
+  if (error){
+    console.error("Failed to fetch classes: " + error.message)
+    return []
+  }
+  return data
 }
