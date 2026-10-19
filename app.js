@@ -240,5 +240,23 @@ async function getClasses(){
     console.error("Failed to fetch classes: " + error.message)
     return []
   }
+  console.log("Fetched classes sucsessfully")
   return data
+}
+
+//Gets the profiles of the users for a specific class
+//Returns one object for each user with the properties username and profile_img
+//Will return an error if the user is not part of the class they are trying to view
+async function getClassMembers(classId){
+  const { data, error } = await db.from("classes").select("class_members(profiles(username, profile_img))").eq("class_id", classId).single()
+
+  if (error){
+    console.error("Failed to fetch class members: " + error.message)
+    return []
+  }
+
+  const cleanedData = data.class_members.map(cm => cm.profiles)
+
+  console.log("Fetched class members sucsessfully")
+  return cleanedData
 }
