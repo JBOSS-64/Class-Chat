@@ -295,5 +295,5 @@ async function sendMessage(message, classId){
 
 //Function to handle reciving new messages
 function handleRecieveMessage(message){
-  console.log(`Recieved changes from ${classId}: `, payload)
+  console.log(`Recieved message from ${message.class_id}: `, message)
 }
