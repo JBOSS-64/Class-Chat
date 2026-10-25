@@ -278,7 +278,7 @@ async function subscribeToClassChat(classId){
 
   currentChatChannel = db.channel(`class-chat-${classId}`)
 
-  currentChatChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `class_id=eq.${classId}`}, (payload) => {handleRecieveMessage(payload.new)}).subscribe()
+  currentChatChannel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `class_id=eq.${classId}`}, (payload) => {handleRecieveMessage(payload.new)}).subscribe()
 }
 
 //Adds a message to the messages table in supabase
@@ -290,6 +290,15 @@ async function sendMessage(message, classId){
     return[]
   }
   console.log(`Sent message "${message}" to class "${classId}" sucsessfully`)
+}
+
+async function editMessage(messageId, updatedText){
+  const { error } = await db.from("messages").update({text: updatedText}).eq("message_id", messageId)
+  if (error){
+    console.error("Failed to edit message: " + error.message)
+    return
+  }
+  console.log("Edited message suscessfully")
 }
 
 
