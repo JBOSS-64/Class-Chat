@@ -278,7 +278,7 @@ async function subscribeToClassChat(classId){
 
   currentChatChannel = db.channel(`class-chat-${classId}`)
 
-  currentChatChannel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `class_id=eq.${classId}`}, (payload) => {handleRecieveMessage(payload.new)}).subscribe()
+  currentChatChannel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `class_id=eq.${classId}`}, (payload) => {handleRecieveMessage(payload.new)}).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `class_id=eq.${classId}`}, (payload) => {handleEditMessage(payload.new)}).subscribe()
 }
 
 //Adds a message to the messages table in supabase
@@ -293,16 +293,28 @@ async function sendMessage(message, classId){
 }
 
 async function editMessage(messageId, updatedText){
-  const { error } = await db.from("messages").update({text: updatedText}).eq("message_id", messageId)
+  const { data, error } = await db.from("messages").update({text: updatedText}).eq("message_id", messageId).select()
   if (error){
     console.error("Failed to edit message: " + error.message)
+    return
+  }
+
+  if (!data || data.length == 0){
+    console.error("Failed to update any rows due to RLS or incorrect message id")
     return
   }
   console.log("Edited message suscessfully")
 }
 
+//MESSAGE HANDLING
+
 
 //Function to handle reciving new messages
 function handleRecieveMessage(message){
   console.log(`Recieved message from ${message.class_id}: `, message)
+}
+
+//Function to handle recieving message edits
+function handleEditMessage(message){
+  console.log("Recived edit of message: ", message)
 }
