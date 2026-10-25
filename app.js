@@ -231,6 +231,9 @@ async function sendMessage(classId, messageContent){
   console.log("Sent message sucsessfully")
 }
 
+//DATA TABLE VIEWING FUNCTIONS
+
+
 //Gets the classes the user is enrolled in
 //Returns class_id, class_name, created_at, creator_id, subject, as well as the class_members array which has user_id and class_id
 async function getClasses(){
@@ -259,4 +262,38 @@ async function getClassMembers(classId){
 
   console.log("Fetched class members sucsessfully")
   return cleanedData
+}
+
+let currentChatChannel = null
+
+//Subscribes the user to a class to listen for realtime updates
+//Right now it removes you from listening for updates in any other channels,
+//this should probably be changed in the future for notifications
+async function subscribeToClassChat(classId){
+  if(currentChatChannel){
+    console.log("Leaving previous chat channel")
+    await db.removeChannel(currentChatChannel)
+    currentChatChannel = null
+  }
+
+  currentChatChannel = db.channel(`class-chat-${classId}`)
+
+  currentChatChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `class_id=eq.${classId}`}, (payload) => {handleRecieveMessage(payload.new)}).subscribe()
+}
+
+//Adds a message to the messages table in supabase
+//Will not allow users to send messages to classes they are not in
+async function sendMessage(message, classId){
+  const { error } = await db.from("messages").insert({user_id: currentUserId, class_id: classId, text: message})
+  if (error){
+    console.error("Failed to send message: " + error.message)
+    return[]
+  }
+  console.log(`Sent message "${message}" to class "${classId}" sucsessfully`)
+}
+
+
+//Function to handle reciving new messages
+function handleRecieveMessage(message){
+  console.log(`Recieved changes from ${classId}: `, payload)
 }
