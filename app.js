@@ -16,7 +16,7 @@ initAuth()
 db.auth.onAuthStateChange((events, session) => {
   if(session){
     authScreen.style.display = "none"
-    appScreen.style.display = "block"
+    appScreen.style.display = "flex"
     console.log("Logged in as: " + session.user.email)
   } else {
     authScreen.style.display = "block"
@@ -300,7 +300,7 @@ async function editMessage(messageId, updatedText){
   }
 
   if (!data || data.length == 0){
-    console.error("Failed to update any rows due to RLS or incorrect message id")
+    console.error("Failed to update any rows due to RLS violation or incorrect/nonexistent message id")
     return
   }
   console.log("Edited message suscessfully")
@@ -308,13 +308,82 @@ async function editMessage(messageId, updatedText){
 
 //MESSAGE HANDLING
 
+const messageContainer = document.getElementById("message-container")
 
 //Function to handle reciving new messages
 function handleRecieveMessage(message){
-  console.log(`Recieved message from ${message.class_id}: `, message)
+  let senderProfile = getProfileById(message.user_id)
+  let scrollBottom = messageContainer.scrollTop + messageContainer.clientHeight >= messageContainer.scrollHeight - 5;
+  const newMessageDiv = document.createElement("div")
+  newMessageDiv.classList.add("message")
+
+  const usernameSpan = document.createElement("span")
+  usernameSpan.classList.add("username")
+  usernameSpan.textContent = senderProfile.username
+
+  const textP = document.createElement("p")
+  textP.textContent = message.text
+
+  newMessageDiv.appendChild(usernameSpan)
+  newMessageDiv.appendChild(textP)
+
+  messageContainer.appendChild(newMessageDiv)
+
+  if (scrollBottom){
+    messageContainer.scrollTop = messageContainer.scrollHeight
+  }
 }
 
 //Function to handle recieving message edits
 function handleEditMessage(message){
   console.log("Recived edit of message: ", message)
+}
+
+//UI HANDLING
+
+let profileCache = []
+async function loadClassProfiles(classId){
+  const { data, error } = await db.from("profiles").select("*, class_members!inner(*)").eq("class_members.class_id", classId)
+
+  if (error){
+    console.error("Failed to load profiles: " + error.message)
+    return
+  }
+
+  profileCache = data
+}
+
+//Loads all of the past messages from a certain class into the message container
+async function loadPastMessages(classId){
+  const {data: messages, error} = await db.from("messages").select().eq("class_id", classId)
+
+  if (error){
+    console.error("Failed to load messages: " + error.message)
+    return
+  }
+  messageContainer.innerHTML = messages.map(msg => {
+    let profile = getProfileById(msg.user_id)
+    return `
+    <div class = "message">
+      <span class = "username">${profile.username}</span>
+      <p class = "message-text">${msg.text}</p>
+    </div>
+    `
+  }).join("")
+  messageContainer.scrollTop = messageContainer.scrollHeight
+}
+
+//Gets the username of a user from the cached user profiles of a class
+function getProfileById(userId){
+  return profileCache.find(profile => profile.user_id == userId)
+}
+
+
+//SETUP FUNCTIONS
+
+//Loads previous chat history and subscribes to chat channel
+async function loadClass(classId){
+  await loadClassProfiles(classId)
+  await loadPastMessages(classId)
+  await subscribeToClassChat(classId)
 }
