@@ -35,6 +35,8 @@
             <ul id = "class-list">
                 
             </ul>
+            <button class = "class-button" id = "join-class">Join Class +</button>
+            <button class = "class-button" id = "create-class">Create Class +</button>
         </aside>
         <main id = "chat-area">
             <header id = "chat-header">
@@ -51,6 +53,25 @@
             </form>
         </main>
 
+    </div>
+    <div id = "join-class-card" class = "card">
+        <div class = "card-content">
+        <h2>Input class code to join a class</h2>
+            <form id = "join-class-form" autocomplete="off">
+                <input type = "text" placeholder="Code" id = "join-class-code">
+                <button type = "submit" id = "join-class-button">Join</button>
+            </form>
+        </div>
+    </div>
+    <div id = "create-class-card" class = "card">
+        <div class = "card-content">
+            <h2>Create a new class</h2>
+            <form id = "create-class-form" autocomplete="off">
+                <input type = "text" placeholder="Class name" id = "new-class-name">
+                <input type = "text" placeholder="Subject" id = "new-class-subject">
+                <button type="submit" id = "create-class-button">Create</button>
+            </form>
+        </div>
     </div>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src = "app.js"></script>

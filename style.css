@@ -48,11 +48,28 @@ body, html{
     color: #94a3b8;
 }
 
+.class-button{
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-bottom: 5px;
+    transition: background 0.2s;
+    background-color: #1e293b;
+    border: none;
+    color: white;
+    font-size: 1.1rem;
+    text-align: left;
+}
+
+.class-button:hover{
+    background-color: #3b82f6;
+    color: white;
+}
 #class-list {
     list-style: none;
 }
 
-#class-list li {
+#class-list li{
     padding: 10px 12px;
     border-radius: 6px;
     cursor: pointer;
@@ -60,7 +77,7 @@ body, html{
     transition: background 0.2s;
 }
 
-#class-list li:hover, .class-list li.active {
+#class-list li:hover, .class-list li.active{
     background-color: #3b82f6;
     color: white;
 }
@@ -139,4 +156,41 @@ body, html{
 
 #chat-input-area button:hover {
     background-color: #2563eb;
+}
+
+.card {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.6);
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    z-index: 1000; 
+
+    display: none; 
+}
+
+.card-content {
+    background-color: #1e1e2f; /* Match your app's dark theme */
+    color: white;
+    padding: 24px;
+    border-radius: 12px;
+    width: 350px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+}
+
+.card-content input, .card-content button{
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
 }

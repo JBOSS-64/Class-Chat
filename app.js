@@ -15,6 +15,7 @@ db.auth.onAuthStateChange((events, session) => {
     appScreen.style.display = "flex"
     console.log("Logged in as: " + session.user.email)
     loadClassList()
+    loadClass(null)
   } else {
     authScreen.style.display = "block"
     appScreen.style.display = "none"
@@ -142,7 +143,10 @@ async function createClass(className, classSubject){
     console.error("Failed to add creator to class: " + addMemberError.message)
   }
 
+  await loadClassList()
+  loadClass(classData.class_id)
   console.log("Class was sucsessfully created")
+  return true
 }
 
 //Adds a user to a class based on class id
@@ -155,7 +159,9 @@ async function joinClass(classId){
   }
 
   await loadClassList()
+  loadClass(classId)
   console.log("Joined class sucsessfully")
+  return true
 }
 
 //Adds an assignment to a specific class
@@ -403,6 +409,11 @@ classListContainer.addEventListener("click", (event) => {
 
 //Loads previous chat history and subscribes to chat channel
 async function loadClass(classId){
+  if (classId == null){
+    classHeader.textContent = ""
+    messageContainer.innerHTML = ""
+    return
+  }
   currentClass = classId
   await loadClassInfo(classId)
   await loadClassProfiles(classId)
@@ -417,6 +428,17 @@ async function loadClass(classId){
 const textInput = document.getElementById("chat-input-area")
 const messageInput = document.getElementById("message-input")
 const classHeader = document.getElementById("class-name")
+const joinClassSidebar = document.getElementById("join-class")
+const createClassSidebar = document.getElementById("create-class")
+const joinClassCard = document.getElementById("join-class-card")
+const createClassCard = document.getElementById("create-class-card")
+const joinClassButton = document.getElementById("join-class-button")
+const createClassButton = document.getElementById("create-class-button")
+const joinClassCode = document.getElementById("join-class-code")
+const newClassName = document.getElementById("new-class-name")
+const newClassSubject = document.getElementById("new-class-subject")
+const joinClassForm = document.getElementById("join-class-form");
+const createClassForm = document.getElementById("create-class-form");
 
 async function loadClassInfo(classId){
   const { data, error } = await db.from("classes").select().eq("class_id", classId).single()
@@ -436,3 +458,48 @@ textInput.addEventListener("submit", async (e) => {
   await sendMessage(messageInput.value, currentClass)
   messageInput.value = ""
 })
+
+joinClassSidebar.addEventListener("click", () => {
+  joinClassCard.style = "display:flex"
+})
+
+createClassSidebar.addEventListener("click", () => {
+  createClassCard.style = "display:flex"
+})
+
+joinClassCard.addEventListener("click", (event) => {
+  if (event.target == joinClassCard){
+    joinClassCard.style = "display: none"
+  }
+})
+
+createClassCard.addEventListener("click", (event) => {
+  if (event.target == createClassCard){
+    createClassCard.style = "display: none"
+  }
+})
+
+joinClassForm.addEventListener("submit", async (e) => {
+    e.preventDefault(); // This will now successfully stop the reload!
+
+    if(await joinClass(joinClassCode.value)){
+      joinClassCode.value = "";
+      joinClassCard.style.display ="none"
+      return
+    }
+    
+    console.error("Error joining class")
+});
+
+createClassForm.addEventListener("submit", async (e) => {
+    e.preventDefault(); // Stops the reload!
+
+    if(await createClass(newClassName.value, newClassSubject.value)){
+      newClassSubject.value = "";
+      newClassName.value = "";
+      createClassCard.style.display = "none"
+      return
+    }
+
+    console.error("Error creating class")
+});
