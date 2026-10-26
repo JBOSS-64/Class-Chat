@@ -6,7 +6,7 @@ const db = createClient('https://vrnxohudtrcxmcngvhne.supabase.co', 'sb_publisha
 
 //Auto login handling
 let currentUserId = null;
-let currentClass = null;
+let currentClass = localStorage.getItem("last-class") || null;
 
 db.auth.onAuthStateChange((events, session) => {
   currentUserId = session?.user?.id || null
@@ -15,7 +15,7 @@ db.auth.onAuthStateChange((events, session) => {
     appScreen.style.display = "flex"
     console.log("Logged in as: " + session.user.email)
     loadClassList()
-    loadClass(null)
+    loadClass(currentClass)
   } else {
     authScreen.style.display = "block"
     appScreen.style.display = "none"
@@ -121,6 +121,8 @@ async function signInWithEmail(authEmail, authPassword) {
 
 async function signOut() {
   await db.auth.signOut({ scope: 'local' })
+  localStorage.removeItem("last-class")
+  currentClass = null
   console.log("Signed out sucsessfully")
 }
 
@@ -149,6 +151,24 @@ async function createClass(className, classSubject){
   return true
 }
 
+async function deleteClass(classId){
+  const { data, error } = await db.from("classes").delete().eq("class_id", classId).select()
+
+  if (error){
+    console.error("Failed to delete class: " + error.message)
+    return
+  }
+
+  if (!data || data.length == 0){
+    console.error("Failed to delete class due to RLS violation or non existent class")
+    return
+  }
+
+  console.log(`Sucsessfully deleted class ${classId}`)
+  await loadClassList()
+  await loadClass(null)
+}
+
 //Adds a user to a class based on class id
 async function joinClass(classId){
   const { error: joinError } = await db.from("class_members").insert({user_id: currentUserId, class_id: classId})
@@ -175,6 +195,7 @@ async function addAssignment(classId, assignmentTitle, assignmentDescripton, due
   }
 
   console.log("Added assignment sucsessfully")
+  return true
 }
 
 //Updates the users username in the profile table
@@ -270,6 +291,8 @@ async function getClassMembers(classId){
   console.log("Fetched class members sucsessfully")
   return cleanedData
 }
+
+
 
 let currentChatChannel = null
 
@@ -393,6 +416,9 @@ async function loadClassList(){
   classListContainer.innerHTML = classes.map(c => `
     <li data-id = "${c.class_id}">${c.class_name}</li>
     `).join("")
+  classDropdown.innerHTML = `<option value = "" disabled selected>Choose a class...</option>` + classes.map(c => `
+    <option value = "${c.class_id}">${c.class_name}</option>
+    `)
 }
 
 classListContainer.addEventListener("click", (event) => {
@@ -419,6 +445,7 @@ async function loadClass(classId){
   await loadClassProfiles(classId)
   await loadPastMessages(classId)
   await subscribeToClassChat(classId)
+  localStorage.setItem("last-class", classId)
 }
 
 
@@ -437,8 +464,16 @@ const createClassButton = document.getElementById("create-class-button")
 const joinClassCode = document.getElementById("join-class-code")
 const newClassName = document.getElementById("new-class-name")
 const newClassSubject = document.getElementById("new-class-subject")
-const joinClassForm = document.getElementById("join-class-form");
-const createClassForm = document.getElementById("create-class-form");
+const joinClassForm = document.getElementById("join-class-form")
+const createClassForm = document.getElementById("create-class-form")
+const createAssignmentSidebar = document.getElementById("create-assignment")
+const createAssignmentCard = document.getElementById("create-assignment-card")
+const createAssignmentForm = document.getElementById("create-assignment-form")
+const assignmentName = document.getElementById("new-assignment-name")
+const assignmentDescripton = document.getElementById("new-assignment-description")
+const newDueDate = document.getElementById("new-assignment-due-date")
+const createAssignmentButton = document.getElementById("create-new-assignment")
+const classDropdown = document.getElementById("assignment-class")
 
 async function loadClassInfo(classId){
   const { data, error } = await db.from("classes").select().eq("class_id", classId).single()
@@ -455,6 +490,9 @@ async function loadClassInfo(classId){
 textInput.addEventListener("submit", async (e) => {
   e.preventDefault()
 
+  if(messageInput.value.length==0){
+    return
+  }
   await sendMessage(messageInput.value, currentClass)
   messageInput.value = ""
 })
@@ -480,26 +518,55 @@ createClassCard.addEventListener("click", (event) => {
 })
 
 joinClassForm.addEventListener("submit", async (e) => {
-    e.preventDefault(); // This will now successfully stop the reload!
+  e.preventDefault();
 
-    if(await joinClass(joinClassCode.value)){
-      joinClassCode.value = "";
-      joinClassCard.style.display ="none"
-      return
-    }
-    
-    console.error("Error joining class")
+  if(await joinClass(joinClassCode.value)){
+    joinClassCode.value = "";
+    joinClassCard.style.display ="none"
+    return
+  }
+
+  console.error("Error joining class")
 });
 
 createClassForm.addEventListener("submit", async (e) => {
-    e.preventDefault(); // Stops the reload!
+  e.preventDefault();
 
-    if(await createClass(newClassName.value, newClassSubject.value)){
-      newClassSubject.value = "";
-      newClassName.value = "";
-      createClassCard.style.display = "none"
-      return
-    }
+  if(await createClass(newClassName.value, newClassSubject.value)){
+    newClassSubject.value = "";
+    newClassName.value = "";
+    createClassCard.style.display = "none"
+    return
+  }
 
-    console.error("Error creating class")
+  console.error("Error creating class")
+});
+
+createAssignmentSidebar.addEventListener("click", () => {
+  createAssignmentCard.style = "display: flex"
+})
+
+createAssignmentCard.addEventListener("click", (event) => {
+  if (event.target == createAssignmentCard){
+    createAssignmentCard.style = "display: none"
+  }
+})
+
+createAssignmentForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  if(classDropdown.value == ""){
+    return
+  }
+
+  if (await addAssignment(classDropdown.value, assignmentName.value, assignmentDescripton.value, newDueDate.value)){
+    classDropdown.value = ""
+    assignmentName.value = ""
+    assignmentDescripton.value = ""
+    newDueDate.value = ""
+    createAssignmentCard.style.display = "none"
+    return
+  }
+
+  console.error("Error creating assignment")
 });

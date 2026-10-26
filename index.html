@@ -30,13 +30,13 @@
         </div>
     </div>
     <div id = "app-screen">
-        <aside id="sidebar">
+        <aside class="sidebar-left">
             <h2>Classes</h2>
             <ul id = "class-list">
                 
             </ul>
-            <button class = "class-button" id = "join-class">Join Class +</button>
-            <button class = "class-button" id = "create-class">Create Class +</button>
+            <button class = "class-button" id = "join-class">+ Join Class</button>
+            <button class = "class-button" id = "create-class">+ Create Class</button>
         </aside>
         <main id = "chat-area">
             <header id = "chat-header">
@@ -52,6 +52,41 @@
                 <button type = "submit">Send</button>
             </form>
         </main>
+        <aside class = "sidebar-right">
+            <h3>Assignments</h3>
+            <div id = "due-today-container"  class = "time-until-due">
+                <h2>Today</h2>
+                <ul id = "due-today" class = "assignment-list">
+
+                </ul>
+            </div>
+            <div id = "due-tomorrow-container"  class = "time-until-due">
+                <h2>Tommorow</h2>
+                <ul id = "due-tomorrow" class = "assignment-list">
+
+                </ul>
+            </div>
+            <div id = "due-this-week-container"  class = "time-until-due">
+                <h2>This week</h2>
+                <ul id = "due-this-week" class = "assignment-list">
+
+                </ul>
+            </div>
+            <div id = "due-next-week-container" class = "time-until-due">
+                <h2>Next week</h2>
+                <ul id = "due-next-week" class = "assignment-list">
+
+                </ul>
+            </div>
+            <div id = "due-later-container" class = "time-until-due">
+                <h2>Later</h2>
+                <ul id = "due-later" class = "assignment-list">
+
+                </ul>
+            </div>
+            <h2 id = "no-assignments">No assignments</h2>
+            <button class = "assignment-button" id = "create-assignment">+ Create Assignment</button>
+        </aside>
 
     </div>
     <div id = "join-class-card" class = "card">
@@ -70,6 +105,20 @@
                 <input type = "text" placeholder="Class name" id = "new-class-name">
                 <input type = "text" placeholder="Subject" id = "new-class-subject">
                 <button type="submit" id = "create-class-button">Create</button>
+            </form>
+        </div>
+    </div>
+    <div id = "create-assignment-card" class = "card">
+        <div class = "card-content">
+            <h2>Create new assignment</h2>
+            <form id = "create-assignment-form" autocomplete="off">
+                <input type = "text" placeholder = "Assignment name" id = "new-assignment-name">
+                <input type = "text" placeholder = "Assignment description" id = "new-assignment-description">
+                <select id = "assignment-class">
+                    <option value = "" disabled selected>Choose a class...</option>
+                </select>
+                <input type = "datetime-local" id = "new-assignment-due-date">
+                <button type = "submit" id = "create-new-assignment">Create Assignment</button>
             </form>
         </div>
     </div>
