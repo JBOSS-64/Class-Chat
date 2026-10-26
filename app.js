@@ -6,6 +6,7 @@ const db = createClient('https://vrnxohudtrcxmcngvhne.supabase.co', 'sb_publisha
 
 //Auto login handling
 let currentUserId = null;
+let currentClass = null;
 
 async function initAuth(){
   const { data: { session } } = await db.auth.getSession();
@@ -21,6 +22,7 @@ db.auth.onAuthStateChange((events, session) => {
   } else {
     authScreen.style.display = "block"
     appScreen.style.display = "none"
+    db.removeChannel(currentChatChannel)
   }
   currentUserId = session?.user?.id || null
 })
@@ -311,6 +313,7 @@ async function editMessage(messageId, updatedText){
 const messageContainer = document.getElementById("message-container")
 
 //Function to handle reciving new messages
+//Adds recieved messages to the message container on the UI
 function handleRecieveMessage(message){
   let senderProfile = getProfileById(message.user_id)
   let scrollBottom = messageContainer.scrollTop + messageContainer.clientHeight >= messageContainer.scrollHeight - 5;
@@ -383,7 +386,22 @@ function getProfileById(userId){
 
 //Loads previous chat history and subscribes to chat channel
 async function loadClass(classId){
+  currentClass = classId
   await loadClassProfiles(classId)
   await loadPastMessages(classId)
   await subscribeToClassChat(classId)
 }
+
+
+//UI -> CODE HOOKUP
+
+//UI elements
+const textInput = document.getElementById("chat-input-area")
+const messageInput = document.getElementById("message-input")
+
+textInput.addEventListener("submit", async (e) => {
+  e.preventDefault()
+
+  await sendMessage(messageInput.value, currentClass)
+  messageInput.value = ""
+})
