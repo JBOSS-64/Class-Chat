@@ -8,23 +8,21 @@ const db = createClient('https://vrnxohudtrcxmcngvhne.supabase.co', 'sb_publisha
 let currentUserId = null;
 let currentClass = null;
 
-async function initAuth(){
-  const { data: { session } } = await db.auth.getSession();
-  currentUserId = session?.user?.id || null;
-}
-initAuth()
-
 db.auth.onAuthStateChange((events, session) => {
+  currentUserId = session?.user?.id || null
   if(session){
     authScreen.style.display = "none"
     appScreen.style.display = "flex"
     console.log("Logged in as: " + session.user.email)
+    loadClassList()
   } else {
     authScreen.style.display = "block"
     appScreen.style.display = "none"
-    db.removeChannel(currentChatChannel)
+    if (currentChatChannel){
+      db.removeChannel(currentChatChannel)
+      currentChatChannel = null
+    }
   }
-  currentUserId = session?.user?.id || null
 })
 
 //LOGIN/SIGNUP
@@ -156,6 +154,7 @@ async function joinClass(classId){
     return
   }
 
+  await loadClassList()
   console.log("Joined class sucsessfully")
 }
 
@@ -345,6 +344,11 @@ function handleEditMessage(message){
 //UI HANDLING
 
 let profileCache = []
+//Gets the username of a user from the cached user profiles of a class
+function getProfileById(userId){
+  return profileCache.find(profile => profile.user_id == userId)
+}
+
 async function loadClassProfiles(classId){
   const { data, error } = await db.from("profiles").select("*, class_members!inner(*)").eq("class_members.class_id", classId)
 
@@ -376,10 +380,23 @@ async function loadPastMessages(classId){
   messageContainer.scrollTop = messageContainer.scrollHeight
 }
 
-//Gets the username of a user from the cached user profiles of a class
-function getProfileById(userId){
-  return profileCache.find(profile => profile.user_id == userId)
+const classListContainer = document.getElementById("class-list")
+async function loadClassList(){
+  let classes = await getClasses()
+
+  classListContainer.innerHTML = classes.map(c => `
+    <li data-id = "${c.class_id}">${c.class_name}</li>
+    `).join("")
 }
+
+classListContainer.addEventListener("click", (event) => {
+  const li = event.target.closest("li")
+  if (!li) return
+
+  const classId = li.dataset.id
+
+  loadClass(classId)
+})
 
 
 //SETUP FUNCTIONS
@@ -387,6 +404,7 @@ function getProfileById(userId){
 //Loads previous chat history and subscribes to chat channel
 async function loadClass(classId){
   currentClass = classId
+  await loadClassInfo(classId)
   await loadClassProfiles(classId)
   await loadPastMessages(classId)
   await subscribeToClassChat(classId)
@@ -398,7 +416,20 @@ async function loadClass(classId){
 //UI elements
 const textInput = document.getElementById("chat-input-area")
 const messageInput = document.getElementById("message-input")
+const classHeader = document.getElementById("class-name")
 
+async function loadClassInfo(classId){
+  const { data, error } = await db.from("classes").select().eq("class_id", classId).single()
+
+  if (error){
+    console.error("Failed to fetch class info: " + error.message)
+    return
+  }
+
+  classHeader.textContent = data.class_name
+}
+
+//Adds listener to the message input and sends the message whenever clicking the button or pressing enter
 textInput.addEventListener("submit", async (e) => {
   e.preventDefault()
 
