@@ -15,6 +15,7 @@ db.auth.onAuthStateChange((events, session) => {
     appScreen.style.display = "flex"
     console.log("Logged in as: " + session.user.email)
     loadClassList()
+    loadAssignmentList()
     loadClass(currentClass)
   } else {
     authScreen.style.display = "block"
@@ -195,6 +196,7 @@ async function addAssignment(classId, assignmentTitle, assignmentDescripton, due
   }
 
   console.log("Added assignment sucsessfully")
+  loadAssignmentList()
   return true
 }
 
@@ -249,16 +251,6 @@ async function updateIsComplete(assignmentId, updatedCompletionStatus){
   console.log("Updated completion status sucsessfully")
 }
 
-//Sends a message to a specific class
-async function sendMessage(classId, messageContent){
-  const { error } = await db.from("messages").insert({class_id: classId, text: messageContent})
-  if (error){
-    console.error("Failed to send message: " + error.message)
-    return
-  }
-  console.log("Sent message sucsessfully")
-}
-
 //DATA TABLE VIEWING FUNCTIONS
 
 
@@ -292,7 +284,41 @@ async function getClassMembers(classId){
   return cleanedData
 }
 
+async function getUserAssignments(){
+  const { data: userAssignments, error: userError } = await db.from("user_assignments").select().eq("user_id", currentUserId)
+  if (userError){
+    console.error("Failed to fetch user assignments: " + error.message)
+    return
+  }
 
+  const assignmentIds = userAssignments.map(item => item.assignment_id)
+
+  const { data:assignmentData, error: assignmentError } = await db.from("assignments").select().in("assignment_id", assignmentIds)
+
+  if (assignmentError){
+    console.error("Failed to fetch assignment data: " + assignmentError.message)
+    return
+  }
+
+  const assignmentMap = new Map()
+
+  userAssignments.forEach(item => {
+    assignmentMap.set(item.assignment_id, { ...item })
+  })
+
+  assignmentData.forEach(item =>{
+    if(assignmentMap.has(item.assignment_id)){
+      const existingItem = assignmentMap.get(item.assignment_id)
+      assignmentMap.set(item.assignment_id, { ...existingItem, ...item })
+    } else {
+      console.error("No assignment exists for user assignment")
+    }
+  })
+
+  const combinedClassData = Array.from(assignmentMap.values())
+
+  return combinedClassData
+}
 
 let currentChatChannel = null
 
@@ -319,7 +345,6 @@ async function sendMessage(message, classId){
     console.error("Failed to send message: " + error.message)
     return[]
   }
-  console.log(`Sent message "${message}" to class "${classId}" sucsessfully`)
 }
 
 async function editMessage(messageId, updatedText){
@@ -419,6 +444,75 @@ async function loadClassList(){
   classDropdown.innerHTML = `<option value = "" disabled selected>Choose a class...</option>` + classes.map(c => `
     <option value = "${c.class_id}">${c.class_name}</option>
     `)
+}
+
+//Loads all assignments from a user into the sidebar
+const assignmentContainer = document.getElementById("assignments-container")
+async function loadAssignmentList(){
+  let assignments = await getUserAssignments()
+
+  if(assignments.length == 0){
+    assignmentContainer.innerHTML = `<h2>No assignments</h2>`
+    return
+  }
+
+  assignments.forEach(item => {
+    item.time_range = determineDateRange(item.due_date)
+  })
+
+  const dueToday = assignments.filter(assignment => assignment.time_range == "today")
+  const dueTomorrow = assignments.filter(assignment => assignment.time_range == "tomorrow")
+  const dueThisWeek = assignments.filter(assignment => assignment.time_range == "this-week")
+  const dueNextWeek = assignments.filter(assignment => assignment.time_range == "next-week")
+  const dueLater = assignments.filter(assignment => assignment.time_range == "later")
+
+  let todayList
+  let tomorrowList
+  let thisWeekList
+  let nextWeekList
+  let laterList
+
+  if(dueToday.length > 0){
+    todayList = `<h2>Today</h2>` + `<ul class = "assignment-list">` + dueToday.map( a => `
+      <li data-id = "${a.assignment_id}">${a.title}</li>
+      `).join("") + `</ul>`
+  } else {
+    todayList = null
+  }
+
+  if(dueTomorrow.length > 0){
+    tomorrowList = `<h2>Tomorrow</h2>` + `<ul class = "assignment-list">` + dueTomorrow.map( a => `
+      <li data-id = "${a.assignment_id}">${a.title}</li>
+      `).join("") + `</ul>`
+  } else {
+    tomorrowList = null
+  }
+
+  if(dueThisWeek.length > 0){
+    thisWeekList = `<h2>This Week</h2>` + `<ul class = "assignment-list">` + dueThisWeek.map( a => `
+      <li data-id = "${a.assignment_id}">${a.title}</li>
+      `).join("") + `</ul>`
+  } else {
+    thisWeekList = null
+  }
+
+  if(dueNextWeek.length > 0){
+    nextWeekList = `<h2>Next Week</h2>` + `<ul class = "assignment-list">` + dueNextWeek.map( a => `
+      <li data-id = "${a.assignment_id}">${a.title}</li>
+      `).join("") + `</ul>`
+  } else {
+    nextWeekList = null
+  }
+
+  if(dueLater > 0){
+    laterList = `<h2>Later</h2>` + `<ul class = "assignment-list">` + dueLater.map( a => `
+      <li data-id = "${a.assignment_id}">${a.title}</li>
+      `).join("") + `</ul>`
+  } else {
+    laterList = null
+  }
+
+  assignmentContainer.innerHTML = `${todayList ? todayList : ""}${tomorrowList ? tomorrowList : ""}${thisWeekList ? thisWeekList : ""}${nextWeekList ? nextWeekList : ""}${laterList ? laterList: ""}`
 }
 
 classListContainer.addEventListener("click", (event) => {
@@ -570,3 +664,48 @@ createAssignmentForm.addEventListener("submit", async (e) => {
 
   console.error("Error creating assignment")
 });
+
+
+//HELPER FUNCTIONS
+
+function determineDateRange(date){
+  const now = new Date()
+  const dueDate = new Date(date)
+
+  const tomorrow = new Date(now)
+  tomorrow.setDate(now.getDate() + 1)
+
+  const dayOfWeek = now.getDay();
+  const daysUntilSaturday = 6-dayOfWeek
+  const endOfWeek = new Date(now)
+  endOfWeek.setDate(now.getDate() + daysUntilSaturday)
+  endOfWeek.setHours(23, 59, 59, 999)
+  if(dueDate < now){
+    return "late"
+  }
+  if(dueDate.getFullYear() == now.getFullYear() && dueDate.getMonth() == now.getMonth() && dueDate.getDate() == now.getDate()){
+    return "today"
+  }
+
+  if (dueDate.getFullYear() == tomorrow.getFullYear() && dueDate.getMonth() == tomorrow.getMonth() && dueDate.getDate() == tomorrow.getDate()){
+    return "tomorrow"
+  }
+
+  if(dueDate >= now && dueDate <= endOfWeek){
+    return "this-week"
+  }
+
+  const startOfNextWeek = new Date(endOfWeek);
+  startOfNextWeek.setDate(endOfWeek.getDate() + 1);
+  startOfNextWeek.setHours(0, 0, 0, 0);
+
+  const endOfNextWeek = new Date(startOfNextWeek);
+  endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
+  endOfNextWeek.setHours(23, 59, 59, 999);
+
+  if(dueDate >= startOfNextWeek && dueDate <= endOfNextWeek){
+    return "next-week"
+  }
+
+  return "later"
+}
