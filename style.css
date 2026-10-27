@@ -176,7 +176,7 @@ body, html{
     background-color: #2563eb;
 }
 
-.card {
+.card{
     position: fixed;
     top: 0;
     left: 0;
@@ -209,6 +209,36 @@ body, html{
 
 .card-content input, .card-content button, .card-content select{
     width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+#auth-screen{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+}
+
+.auth-card{
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.auth-card input, .auth-card button, .auth-card select{
+    width: 350px;
+    display: flex;
+    flex-direction: column;
     padding: 10px;
     box-sizing: border-box;
 }

@@ -18,7 +18,7 @@ db.auth.onAuthStateChange((events, session) => {
     loadAssignmentList()
     loadClass(currentClass)
   } else {
-    authScreen.style.display = "block"
+    authScreen.style.display = "flex"
     appScreen.style.display = "none"
     if (currentChatChannel){
       db.removeChannel(currentChatChannel)
@@ -48,18 +48,18 @@ let validPassword = false
 
 //Event Listeners
 signUpButton.addEventListener("click", () => {
-  signUpDiv.style.display = "block"
+  signUpDiv.style = "dispay: flex; flex-direction: column; allign-items: center;"
   logInDiv.style.display = "none"
 })
 
 logInButton.addEventListener("click", () => {
-  logInDiv.style.display = "block"
+  logInDiv.style = "dispay: flex; flex-direction: column; allign-items: center;"
   signUpDiv.style.display = "none"
 })
 
 signUpPassword.addEventListener("input", () => {
   if(confirmPassword.value != signUpPassword.value){
-    errorText.style.display = "block"
+    errorText.style = "dispay: flex; flex-direction: column; allign-items: center;"
   } else {
     errorText.style.display = "none"
   }
@@ -67,7 +67,7 @@ signUpPassword.addEventListener("input", () => {
 
 confirmPassword.addEventListener("input", () => {
   if(confirmPassword.value != signUpPassword.value){
-    errorText.style.display = "block"
+    errorText.style = "dispay: flex; flex-direction: column; allign-items: center;"
     validPassword = false
   } else {
     errorText.style.display = "none"
@@ -81,7 +81,12 @@ loginForm.addEventListener("submit", async (e) => {
   const email = loginEmail.value
   const password = loginPassword.value
 
-  await signInWithEmail(email, password)
+  if(signInWithEmail(email, password)){
+    loginEmail.value = ""
+    loginPassword.value = ""
+    signUpEmail.value = ""
+    signUpPassword.value = ""
+  }
 })
 
 signupForm.addEventListener("submit", async (e) => {
@@ -94,7 +99,12 @@ signupForm.addEventListener("submit", async (e) => {
   const email = signUpEmail.value
   const password = signUpPassword.value
 
-  await signUpNewUser(email, password)
+  if(signUpNewUser(email, password)){
+    loginEmail.value = ""
+    loginPassword.value = ""
+    signUpEmail.value = ""
+    signUpPassword.value = ""
+  }
 })
 
 async function signUpNewUser(authEmail, authPassword) {
@@ -108,6 +118,7 @@ async function signUpNewUser(authEmail, authPassword) {
   if(error){
     alert("Sign up error: " + error.message)
   }
+  return true
 }
 
 async function signInWithEmail(authEmail, authPassword) {
@@ -118,6 +129,7 @@ async function signInWithEmail(authEmail, authPassword) {
   if(error){
     alert("Sign in error: " + error.message)
   }
+  return true
 }
 
 async function signOut() {
@@ -637,7 +649,7 @@ createClassForm.addEventListener("submit", async (e) => {
 });
 
 createAssignmentSidebar.addEventListener("click", () => {
-  createAssignmentCard.style = "display: flex"
+  createAssignmentCard.style = "dispay: flex; flex-direction: column; allign-items: center;"
 })
 
 createAssignmentCard.addEventListener("click", (event) => {
