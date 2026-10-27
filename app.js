@@ -48,18 +48,18 @@ let validPassword = false
 
 //Event Listeners
 signUpButton.addEventListener("click", () => {
-  signUpDiv.style = "dispay: flex; flex-direction: column; allign-items: center;"
+  signUpDiv.style = "display: flex; flex-direction: column; allign-items: center;"
   logInDiv.style.display = "none"
 })
 
 logInButton.addEventListener("click", () => {
-  logInDiv.style = "dispay: flex; flex-direction: column; allign-items: center;"
+  logInDiv.style = "display: flex; flex-direction: column; allign-items: center;"
   signUpDiv.style.display = "none"
 })
 
 signUpPassword.addEventListener("input", () => {
   if(confirmPassword.value != signUpPassword.value){
-    errorText.style = "dispay: flex; flex-direction: column; allign-items: center;"
+    errorText.style = "display: flex; flex-direction: column; allign-items: center;"
   } else {
     errorText.style.display = "none"
   }
@@ -67,7 +67,7 @@ signUpPassword.addEventListener("input", () => {
 
 confirmPassword.addEventListener("input", () => {
   if(confirmPassword.value != signUpPassword.value){
-    errorText.style = "dispay: flex; flex-direction: column; allign-items: center;"
+    errorText.style = "display: flex; flex-direction: column; allign-items: center;"
     validPassword = false
   } else {
     errorText.style.display = "none"
@@ -472,6 +472,9 @@ async function loadAssignmentList(){
     item.time_range = determineDateRange(item.due_date)
   })
 
+  assignments.sort((a, b) => {
+    return new Date(a.due_date) - new Date(b.due_date)
+  })
   const dueToday = assignments.filter(assignment => assignment.time_range == "today")
   const dueTomorrow = assignments.filter(assignment => assignment.time_range == "tomorrow")
   const dueThisWeek = assignments.filter(assignment => assignment.time_range == "this-week")
@@ -484,9 +487,34 @@ async function loadAssignmentList(){
   let nextWeekList
   let laterList
 
+  let daysInWeek = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday"
+  ]
+
+  let monthsInYear = [
+    "Jan",
+    "Feb",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "Aug",
+    "Sept",
+    "Oct",
+    "Nov",
+    "Dec"
+  ]
+
   if(dueToday.length > 0){
     todayList = `<h2>Today</h2>` + `<ul class = "assignment-list">` + dueToday.map( a => `
-      <li data-id = "${a.assignment_id}">${a.title}</li>
+      <li data-id = "${a.assignment_id}"><span>${a.title}</span><span class = "assignment-time">${(new Date(a.due_date).getHours()) > 12 ? (new Date(a.due_date).getHours()) - 12 : (new Date(a.due_date).getHours())}:${new Date(a.due_date).getMinutes()} ${(new Date(a.due_date).getHours()) >= 12 ? "PM" : "AM"}</span></li>
       `).join("") + `</ul>`
   } else {
     todayList = null
@@ -494,7 +522,7 @@ async function loadAssignmentList(){
 
   if(dueTomorrow.length > 0){
     tomorrowList = `<h2>Tomorrow</h2>` + `<ul class = "assignment-list">` + dueTomorrow.map( a => `
-      <li data-id = "${a.assignment_id}">${a.title}</li>
+      <li data-id = "${a.assignment_id}"><span>${a.title}</span><span class = "assignment-time">${(new Date(a.due_date).getHours()) > 12 ? (new Date(a.due_date).getHours()) - 12 : (new Date(a.due_date).getHours())}:${new Date(a.due_date).getMinutes()} ${(new Date(a.due_date).getHours()) >= 12 ? "PM" : "AM"}</span></li>
       `).join("") + `</ul>`
   } else {
     tomorrowList = null
@@ -502,7 +530,7 @@ async function loadAssignmentList(){
 
   if(dueThisWeek.length > 0){
     thisWeekList = `<h2>This Week</h2>` + `<ul class = "assignment-list">` + dueThisWeek.map( a => `
-      <li data-id = "${a.assignment_id}">${a.title}</li>
+      <li data-id = "${a.assignment_id}"><span>${a.title}</span><span class = "assignment-time">${daysInWeek[new Date(a.due_date).getDay()]}</span></li>
       `).join("") + `</ul>`
   } else {
     thisWeekList = null
@@ -510,15 +538,15 @@ async function loadAssignmentList(){
 
   if(dueNextWeek.length > 0){
     nextWeekList = `<h2>Next Week</h2>` + `<ul class = "assignment-list">` + dueNextWeek.map( a => `
-      <li data-id = "${a.assignment_id}">${a.title}</li>
+      <li data-id = "${a.assignment_id}"><span>${a.title}</span><span class = "assignment-time">${daysInWeek[new Date(a.due_date).getDay()]}</span></li>
       `).join("") + `</ul>`
   } else {
     nextWeekList = null
   }
 
-  if(dueLater > 0){
+  if(dueLater.length > 0){
     laterList = `<h2>Later</h2>` + `<ul class = "assignment-list">` + dueLater.map( a => `
-      <li data-id = "${a.assignment_id}">${a.title}</li>
+      <li data-id = "${a.assignment_id}"><span>${a.title}</span><span class = "assignment-time">${monthsInYear[new Date(a.due_date).getMonth()]} ${new Date(a.due_date).getDate()}, ${new Date(a.due_date).getFullYear()}</span></li>
       `).join("") + `</ul>`
   } else {
     laterList = null
@@ -649,7 +677,7 @@ createClassForm.addEventListener("submit", async (e) => {
 });
 
 createAssignmentSidebar.addEventListener("click", () => {
-  createAssignmentCard.style = "dispay: flex; flex-direction: column; allign-items: center;"
+  createAssignmentCard.style = "display: flex; flex-direction: column; allign-items: center;"
 })
 
 createAssignmentCard.addEventListener("click", (event) => {

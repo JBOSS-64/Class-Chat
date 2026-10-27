@@ -40,6 +40,7 @@ body, html{
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    box-sizing: border-box;
 }
 
 .sidebar-left{
@@ -48,6 +49,7 @@ body, html{
 
 .sidebar-right{
     border-left: 1px solid #334155;
+    padding-right:0
 }
 
 .sidebar-left h2, .sidebar-right h2{
@@ -64,6 +66,16 @@ body, html{
 .time-until-due{
     display: none;
     flex-direction: column;
+}
+
+#assignments-container {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+#create-assignment {
+    flex-shrink: 0;          
 }
 
 .class-button, .assignment-button{
@@ -93,6 +105,24 @@ body, html{
     cursor: pointer;
     margin-bottom: 5px;
     transition: background 0.2s;
+}
+
+.assignment-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.assignment-list li span:first-child{
+    flex: 1;
+    min-width: 0;
+    
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #class-list li:hover, .class-list li.active, .assignment-list li:hover{
@@ -241,4 +271,9 @@ body, html{
     flex-direction: column;
     padding: 10px;
     box-sizing: border-box;
+}
+
+.assignment-time{
+    color: #94a3b8;
+    white-space: nowrap;
 }
