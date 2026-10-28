@@ -125,7 +125,7 @@ body, html{
     text-overflow: ellipsis;
 }
 
-#class-list li:hover, .class-list li.active, .assignment-list li:hover{
+#class-list li:hover, #class-list li.active, .assignment-list li:hover{
     background-color: #3b82f6;
     color: white;
 }
@@ -151,14 +151,31 @@ body, html{
     display: flex;
     flex-direction: column;
     gap: 15px;
+    align-items: flex-start;
 }
 
 .message {
     background-color: #334155;
     padding: 10px 14px;
     border-radius: 8px;
-    max-width: 60%;
-    align-self: flex-start;
+    max-width: 100%;
+    width: fit-content;
+    display: flex;
+    gap: 12px;
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+.message-content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.message-text {
+    overflow-wrap: anywhere;
+    margin: 0;
 }
 
 .message .username {
@@ -276,4 +293,24 @@ body, html{
 .assignment-time{
     color: #94a3b8;
     white-space: nowrap;
+}
+
+.pfp {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+#profile-button{
+    display: flex;
+    margin-top: auto;
+    flex-direction: row;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+#profile-button .pfp{
+    margin-right: 12px
 }

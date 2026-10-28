@@ -6,17 +6,36 @@ const db = createClient('https://vrnxohudtrcxmcngvhne.supabase.co', 'sb_publisha
 
 //Auto login handling
 let currentUserId = null;
+let currentUserProfile = null;
 let currentClass = localStorage.getItem("last-class") || null;
 
-db.auth.onAuthStateChange((events, session) => {
+const profileImages = {
+    "grey": "default-pfps/grey.svg",
+    "blue": "default-pfps/blue.svg",
+    "coral": "default-pfps/coral.svg",
+    "green": "default-pfps/green.svg",
+    "orange": "default-pfps/orange.svg",
+    "pink": "default-pfps/pink.svg",
+    "purple": "default-pfps/purple.svg",
+    "turquoise": "default-pfps/turquoise.svg",
+    "yellow": "default-pfps/yellow.svg"
+};
+
+
+db.auth.onAuthStateChange(async (events, session) => {
   currentUserId = session?.user?.id || null
   if(session){
+    loadUserProfile()
     authScreen.style.display = "none"
     appScreen.style.display = "flex"
     console.log("Logged in as: " + session.user.email)
     loadClassList()
-    loadAssignmentList()
-    loadClass(currentClass)
+    await loadClass(currentClass)
+    classListContainer.querySelectorAll("li").forEach(item => {
+      if(item.dataset.id == currentClass){
+        item.classList.add("active")
+      }
+    });
   } else {
     authScreen.style.display = "flex"
     appScreen.style.display = "none"
@@ -208,7 +227,7 @@ async function addAssignment(classId, assignmentTitle, assignmentDescripton, due
   }
 
   console.log("Added assignment sucsessfully")
-  loadAssignmentList()
+  loadAssignmentList(currentClass)
   return true
 }
 
@@ -237,7 +256,7 @@ async function updatePersonalAssignment(assignmentId, updatedNotes, updatedTime,
 async function updatePersonalNotes(assignmentId, updatedNotes){
   const { error } = await db.from("user_assignments").update({notes: updatedNotes}).eq("assignment_id", assignmentId).eq("user_id", currentUserId)
   if (error){
-    console.error("Failed to update notes: " + error.messages)
+    console.error("Failed to update notes: " + error.message)
     return
   }
   console.log("Updated notes sucsessfully")
@@ -277,23 +296,6 @@ async function getClasses(){
   }
   console.log("Fetched classes sucsessfully")
   return data
-}
-
-//Gets the profiles of the users for a specific class
-//Returns one object for each user with the properties username and profile_img
-//Will return an error if the user is not part of the class they are trying to view
-async function getClassMembers(classId){
-  const { data, error } = await db.from("classes").select("class_members(profiles(username, profile_img))").eq("class_id", classId).single()
-
-  if (error){
-    console.error("Failed to fetch class members: " + error.message)
-    return []
-  }
-
-  const cleanedData = data.class_members.map(cm => cm.profiles)
-
-  console.log("Fetched class members sucsessfully")
-  return cleanedData
 }
 
 async function getUserAssignments(){
@@ -382,8 +384,12 @@ const messageContainer = document.getElementById("message-container")
 function handleRecieveMessage(message){
   let senderProfile = getProfileById(message.user_id)
   let scrollBottom = messageContainer.scrollTop + messageContainer.clientHeight >= messageContainer.scrollHeight - 5;
+
   const newMessageDiv = document.createElement("div")
-  newMessageDiv.classList.add("message")
+  newMessageDiv.classList.add("message-content")
+
+  const messageDiv = document.createElement("div")
+  messageDiv.classList.add("message")
 
   const usernameSpan = document.createElement("span")
   usernameSpan.classList.add("username")
@@ -391,11 +397,19 @@ function handleRecieveMessage(message){
 
   const textP = document.createElement("p")
   textP.textContent = message.text
+  textP.classList.add("message-text")
+
+  const pfpImg = document.createElement("img")
+  pfpImg.src = profileImages[getProfileById(message.user_id).profile_img]
+  pfpImg.classList.add("pfp")
 
   newMessageDiv.appendChild(usernameSpan)
   newMessageDiv.appendChild(textP)
 
-  messageContainer.appendChild(newMessageDiv)
+  messageDiv.appendChild(pfpImg)
+  messageDiv.appendChild(newMessageDiv)
+
+  messageContainer.appendChild(messageDiv)
 
   if (scrollBottom){
     messageContainer.scrollTop = messageContainer.scrollHeight
@@ -426,6 +440,22 @@ async function loadClassProfiles(classId){
   profileCache = data
 }
 
+const cardImg = document.getElementById("profile-card-img")
+const cardUsername = document.getElementById("username")
+async function loadUserProfile(){
+  const { data, error } = await db.from("profiles").select().eq("user_id", currentUserId).single()
+
+  if (error){
+    console.error("Failed to load user profile: " + error.message)
+    return
+  }
+
+  currentUserProfile = data
+
+  cardImg.src = profileImages[data.profile_img]
+  cardUsername.textContent = data.username
+}
+
 //Loads all of the past messages from a certain class into the message container
 async function loadPastMessages(classId){
   const {data: messages, error} = await db.from("messages").select().eq("class_id", classId)
@@ -438,8 +468,11 @@ async function loadPastMessages(classId){
     let profile = getProfileById(msg.user_id)
     return `
     <div class = "message">
-      <span class = "username">${profile.username}</span>
-      <p class = "message-text">${msg.text}</p>
+      <img src = "${profileImages[profile.profile_img]}" class = "pfp">
+      <div class = "message-content">
+        <span class = "username">${profile.username}</span>
+        <p class = "message-text">${msg.text}</p>
+      </div>
     </div>
     `
   }).join("")
@@ -460,12 +493,17 @@ async function loadClassList(){
 
 //Loads all assignments from a user into the sidebar
 const assignmentContainer = document.getElementById("assignments-container")
-async function loadAssignmentList(){
+async function loadAssignmentList(classId = null){
   let assignments = await getUserAssignments()
 
   if(assignments.length == 0){
     assignmentContainer.innerHTML = `<h2>No assignments</h2>`
     return
+  }
+
+  //If a class id is specified, then filter the assignments so only those assignments are shown
+  if(classId){
+    assignments = assignments.filter(assignment => assignment.class_id == classId)
   }
 
   assignments.forEach(item => {
@@ -559,6 +597,18 @@ classListContainer.addEventListener("click", (event) => {
   const li = event.target.closest("li")
   if (!li) return
 
+  if(li.classList.contains("active")){
+    li.classList.remove("active")
+    loadClass(null)
+    return
+  }
+
+  classListContainer.querySelectorAll("li").forEach(item => {
+    item.classList.remove("active");
+  });
+
+  li.classList.add("active")
+
   const classId = li.dataset.id
 
   loadClass(classId)
@@ -572,13 +622,18 @@ async function loadClass(classId){
   if (classId == null){
     classHeader.textContent = ""
     messageContainer.innerHTML = ""
+    textInput.style = "display:none"
+    loadAssignmentList(null)
+    localStorage.removeItem("last-class")
     return
   }
   currentClass = classId
+  textInput.style = "display:flex"
   await loadClassInfo(classId)
   await loadClassProfiles(classId)
   await loadPastMessages(classId)
   await subscribeToClassChat(classId)
+  await loadAssignmentList(classId)
   localStorage.setItem("last-class", classId)
 }
 
