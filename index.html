@@ -47,6 +47,7 @@
         <main id = "chat-area">
             <header id = "chat-header">
                 <h3 id = "class-name"></h3>
+                <img src = "assets/icons/info.svg" id = "info-button">
             </header>
 
             <div id = "message-container">
@@ -98,6 +99,13 @@
                 <input type = "datetime-local" id = "new-assignment-due-date">
                 <button type = "submit" id = "create-new-assignment">Create Assignment</button>
             </form>
+        </div>
+    </div>
+    <div id = "class-info-card" class = "card">
+        <div class = "card-content">
+            <h2 id = "card-class-name"></h2>
+            <p id = "card-subject"></p>
+            <p id = "card-class-code"></p>
         </div>
     </div>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>

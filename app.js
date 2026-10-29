@@ -1,4 +1,3 @@
-
 const { createClient } = supabase
 
 // Create a single supabase client for interacting with your database
@@ -10,15 +9,15 @@ let currentUserProfile = null;
 let currentClass = localStorage.getItem("last-class") || null;
 
 const profileImages = {
-    "grey": "default-pfps/grey.svg",
-    "blue": "default-pfps/blue.svg",
-    "coral": "default-pfps/coral.svg",
-    "green": "default-pfps/green.svg",
-    "orange": "default-pfps/orange.svg",
-    "pink": "default-pfps/pink.svg",
-    "purple": "default-pfps/purple.svg",
-    "turquoise": "default-pfps/turquoise.svg",
-    "yellow": "default-pfps/yellow.svg"
+    "grey": "assets/default-pfps/grey.svg",
+    "blue": "assets/default-pfps/blue.svg",
+    "coral": "assets/default-pfps/coral.svg",
+    "green": "assets/default-pfps/green.svg",
+    "orange": "assets/default-pfps/orange.svg",
+    "pink": "assets/default-pfps/pink.svg",
+    "purple": "assets/default-pfps/purple.svg",
+    "turquoise": "assets/default-pfps/turquoise.svg",
+    "yellow": "assets/default-pfps/yellow.svg"
 };
 
 
@@ -614,7 +613,6 @@ classListContainer.addEventListener("click", (event) => {
   loadClass(classId)
 })
 
-
 //SETUP FUNCTIONS
 
 //Loads previous chat history and subscribes to chat channel
@@ -663,6 +661,11 @@ const assignmentDescripton = document.getElementById("new-assignment-description
 const newDueDate = document.getElementById("new-assignment-due-date")
 const createAssignmentButton = document.getElementById("create-new-assignment")
 const classDropdown = document.getElementById("assignment-class")
+const infoButton = document.getElementById("info-button")
+const infoCard = document.getElementById("class-info-card")
+const infoCardName = document.getElementById("card-class-name")
+const infoCardSubject = document.getElementById("card-subject")
+const infoClassCode = document.getElementById("card-class-code")
 
 async function loadClassInfo(classId){
   const { data, error } = await db.from("classes").select().eq("class_id", classId).single()
@@ -673,6 +676,9 @@ async function loadClassInfo(classId){
   }
 
   classHeader.textContent = data.class_name
+  infoCardName.textContent = data.class_name
+  infoCardSubject.textContent = data.subject
+  infoClassCode.textContent = data.class_id
 }
 
 //Adds listener to the message input and sends the message whenever clicking the button or pressing enter
@@ -741,6 +747,16 @@ createAssignmentCard.addEventListener("click", (event) => {
   }
 })
 
+infoButton.addEventListener("click", () => {
+  infoCard.style = "display:flex"
+})
+
+infoCard.addEventListener("click", (event) => {
+  if (event.target == infoCard){
+    infoCard.style = "display: none"
+  }
+})
+
 createAssignmentForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -759,7 +775,6 @@ createAssignmentForm.addEventListener("submit", async (e) => {
 
   console.error("Error creating assignment")
 });
-
 
 //HELPER FUNCTIONS
 

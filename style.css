@@ -92,7 +92,7 @@ body, html{
 }
 
 .class-button:hover, .assignment-button:hover{
-    background-color: #3b82f6;
+    background-color: #475569;
     color: white;
 }
 #class-list, .assignment-list{
@@ -125,8 +125,13 @@ body, html{
     text-overflow: ellipsis;
 }
 
-#class-list li:hover, #class-list li.active, .assignment-list li:hover{
+#class-list li.active{
     background-color: #3b82f6;
+    color: white;
+}
+
+#class-list li:hover, .assignment-list li:hover{
+    background-color: #475569;
     color: white;
 }
 
@@ -142,6 +147,13 @@ body, html{
     background-color: #1e293b;
     border-bottom: 1px solid #334155;
     font-size: 1.2rem;
+    flex-direction: row;
+    display: flex;
+    align-items: center;
+}
+
+#chat-header h3 {
+    margin: 0;
 }
 
 #message-container {
@@ -244,6 +256,7 @@ body, html{
     background-color: #1e1e2f; /* Match your app's dark theme */
     color: white;
     padding: 24px;
+    gap: 12px;
     border-radius: 12px;
     width: 350px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
@@ -313,4 +326,43 @@ body, html{
 
 #profile-button .pfp{
     margin-right: 12px
+}
+
+#info-button {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    margin-left: auto;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, border-radius 0.2s ease;
+}
+
+#info-button:hover {
+    background-color: #475569;
+    border-radius: 8px;
+}
+
+#card-class-name {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+#card-subject {
+    margin: 0;
+    color: #94a3b8;   /* Muted slate gray */
+    font-size: 0.95rem;
+}
+
+#card-class-code {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #64748b;   /* Even darker muted color for secondary metadata */
+    font-family: monospace; /* Gives the ID a clean technical look */
 }
