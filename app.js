@@ -265,7 +265,7 @@ async function updatePersonalNotes(assignmentId, updatedNotes){
 async function updatePersonalEstimatedTime(assignmentId, updatedTime){
   const { error } = await db.from("user_assignments").update({estimated_time: updatedTime}).eq("assignment_id", assignmentId).eq("user_id", currentUserId)
   if(error){
-    console.error("Failed ot update estimated time: " + error.message)
+    console.error("Failed to update estimated time: " + error.message)
     return
   }
   console.log("Updated estimated time sucsessfully")
@@ -275,7 +275,7 @@ async function updatePersonalEstimatedTime(assignmentId, updatedTime){
 async function updateIsComplete(assignmentId, updatedCompletionStatus){
   const { error } = await db.from("user_assignments").update({is_complete: updatedCompletionStatus}).eq("assignment_id", assignmentId).eq("user_id", currentUserId)
   if (error){
-    console.error("Failed ot update completion status: " + error.message)
+    console.error("Failed to update completion status: " + error.message)
     return
   }
   console.log("Updated completion status sucsessfully")
