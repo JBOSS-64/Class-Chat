@@ -461,8 +461,12 @@ async function loadUserProfile(){
   }
 
   currentUserProfile = data
-  cardImg.src = profileImages[currentUserProfile.profile_img]
-  cardUsername.textContent = currentUserProfile.username
+  document.querySelectorAll(".user-pfp").forEach((profilePic) => {
+    profilePic.src = profileImages[currentUserProfile.profile_img]
+  })
+  document.querySelectorAll(".user-username").forEach((userUsername) => {
+    userUsername.textContent = currentUserProfile.username
+  })
 
   if(!currentUserProfile.username){
     userOnboardingCard.style = "display:flex"
@@ -481,9 +485,9 @@ async function loadPastMessages(classId){
     let profile = getProfileById(msg.user_id)
     return `
     <div class = "message">
-      <img src = "${profileImages[profile.profile_img]}" class = "pfp">
+      <img src = "${profileImages[profile.profile_img]}" class = "pfp${msg.user_id == currentUserId ? " user-pfp":""}">
       <div class = "message-content">
-        <span class = "username">${profile.username}</span>
+        <span class = "username${msg.user_id == currentUserId ? " user-username":""}">${profile.username}</span>
         <p class = "message-text">${msg.text}</p>
       </div>
     </div>
@@ -787,9 +791,18 @@ accountSetupForm.addEventListener("submit", async (e) => {
 
   userOnboardingCard.style = "display:none"
 
-  cardUsername.textContent = newUsername
-  currentUserProfile.username = newUsername
-  currentUserProfile.profile_img = newProfileImg
+  if (currentUserProfile) {
+    currentUserProfile.username = newUsername
+    currentUserProfile.profile_img = newProfileImg
+  }
+
+  document.querySelectorAll(".user-pfp").forEach((profilePic) => {
+    profilePic.src = profileImages[currentUserProfile.profile_img]
+  })
+  document.querySelectorAll(".user-username").forEach((userUsername) => {
+    userUsername.textContent = currentUserProfile.username
+  })
+
   cardImg.src = profileImages[newProfileImg]
 });
 
