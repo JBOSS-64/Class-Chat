@@ -39,9 +39,9 @@
             </ul>
             <button class = "class-button" id = "join-class">+ Join Class</button>
             <button class = "class-button" id = "create-class">+ Create Class</button>
-            <div id = "profile-button">
-                <img src = "default-pfps/grey.svg" class = "pfp" id = "profile-card-img">
-                <span id = "username">Test</span>
+            <div id = "profile-button" class = "class-button">
+                <img src = "assets/default-pfps/grey.svg" class = "pfp" id = "profile-card-img">
+                <span id = "username"></span>
             </div>
         </aside>
         <main id = "chat-area">
@@ -106,6 +106,53 @@
             <h2 id = "card-class-name"></h2>
             <p id = "card-subject"></p>
             <p id = "card-class-code"></p>
+        </div>
+    </div>
+    <div id = "user-onboarding" class = "card">
+        <div class = "card-content">
+            <h2>Choose your profile picture and username</h2>
+            <form id = "setup-account-form" autocomplete = "off">
+                <div class = "pfp-picker">
+                    <label class = "pfp-option">
+                        <input type="radio" name = "profile_img" value = "grey" checked>
+                        <img src = "assets/default-pfps/grey.svg" class = "pfp">
+                    </label>
+                    <label class = "pfp-option">
+                        <input type="radio" name = "profile_img" value = "blue">
+                        <img src = "assets/default-pfps/blue.svg" class = "pfp">
+                    </label>
+                    <label class = "pfp-option">
+                        <input type="radio" name = "profile_img" value = "coral">
+                        <img src = "assets/default-pfps/coral.svg" class = "pfp">
+                    </label>
+                    <label class = "pfp-option">
+                        <input type="radio" name = "profile_img" value = "green">
+                        <img src = "assets/default-pfps/green.svg" class = "pfp">
+                    </label>
+                    <label class = "pfp-option">
+                        <input type="radio" name = "profile_img" value = "orange">
+                        <img src = "assets/default-pfps/orange.svg" class = "pfp">
+                    </label>
+                    <label class = "pfp-option">
+                        <input type="radio" name = "profile_img" value = "pink">
+                        <img src = "assets/default-pfps/pink.svg" class = "pfp">
+                    </label>
+                    <label class = "pfp-option">
+                        <input type="radio" name = "profile_img" value = "purple">
+                        <img src = "assets/default-pfps/purple.svg" class = "pfp">
+                    </label>
+                    <label class = "pfp-option">
+                        <input type="radio" name = "profile_img" value = "turqoise">
+                        <img src = "assets/default-pfps/turqoise.svg" class = "pfp">
+                    </label>
+                    <label class = "pfp-option">
+                        <input type="radio" name = "profile_img" value = "yellow">
+                        <img src = "assets/default-pfps/yellow.svg" class = "pfp">
+                    </label>
+                </div>
+                <input type="text" placeholder="Username" id = "username-input">
+                <button type="submit">Lets go!</button>
+            </form>
         </div>
     </div>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>

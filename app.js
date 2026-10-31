@@ -16,7 +16,7 @@ const profileImages = {
     "orange": "assets/default-pfps/orange.svg",
     "pink": "assets/default-pfps/pink.svg",
     "purple": "assets/default-pfps/purple.svg",
-    "turquoise": "assets/default-pfps/turquoise.svg",
+    "turqoise": "assets/default-pfps/turqoise.svg",
     "yellow": "assets/default-pfps/yellow.svg"
 };
 
@@ -36,6 +36,7 @@ db.auth.onAuthStateChange(async (events, session) => {
       }
     });
   } else {
+    currentUserProfile = null
     authScreen.style.display = "flex"
     appScreen.style.display = "none"
     if (currentChatChannel){
@@ -242,6 +243,15 @@ async function updateUsername(updatedUsername){
   console.log("Updated username sucsessfully")
 }
 
+async function updatePfp(pfp){
+  const { error } = await db.from("profiles").update({profile_img: pfp}).eq("user_id", currentUserId)
+
+  if (error){
+    console.error("Failed to update username: " + error.message)
+    return
+  }
+}
+
 //Use this function to update all of the personal assignment details at once, likely when the user first enters the info
 async function updatePersonalAssignment(assignmentId, updatedNotes, updatedTime, updatedCompletionStatus){
   await Promise.all([
@@ -442,6 +452,7 @@ async function loadClassProfiles(classId){
 const cardImg = document.getElementById("profile-card-img")
 const cardUsername = document.getElementById("username")
 async function loadUserProfile(){
+  usernameInput.value = ''
   const { data, error } = await db.from("profiles").select().eq("user_id", currentUserId).single()
 
   if (error){
@@ -450,9 +461,12 @@ async function loadUserProfile(){
   }
 
   currentUserProfile = data
+  cardImg.src = profileImages[currentUserProfile.profile_img]
+  cardUsername.textContent = currentUserProfile.username
 
-  cardImg.src = profileImages[data.profile_img]
-  cardUsername.textContent = data.username
+  if(!currentUserProfile.username){
+    userOnboardingCard.style = "display:flex"
+  }
 }
 
 //Loads all of the past messages from a certain class into the message container
@@ -666,6 +680,10 @@ const infoCard = document.getElementById("class-info-card")
 const infoCardName = document.getElementById("card-class-name")
 const infoCardSubject = document.getElementById("card-subject")
 const infoClassCode = document.getElementById("card-class-code")
+const userOnboardingCard = document.getElementById("user-onboarding")
+const accountSetupForm = document.getElementById("setup-account-form")
+const usernameInput = document.getElementById("username-input")
+const profileButton = document.getElementById("profile-button")
 
 async function loadClassInfo(classId){
   const { data, error } = await db.from("classes").select().eq("class_id", classId).single()
@@ -757,6 +775,39 @@ infoCard.addEventListener("click", (event) => {
   }
 })
 
+accountSetupForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if(!isValidUsername(usernameInput.value)){
+    return
+  }
+  const newUsername = usernameInput.value
+  const newProfileImg = document.querySelector('input[name="profile_img"]:checked').value
+  updateUsername(newUsername)
+  updatePfp(newProfileImg)
+
+  userOnboardingCard.style = "display:none"
+
+  cardUsername.textContent = newUsername
+  currentUserProfile.username = newUsername
+  currentUserProfile.profile_img = newProfileImg
+  cardImg.src = profileImages[newProfileImg]
+});
+
+userOnboardingCard.addEventListener("click", (event) => {
+  if (event.target == userOnboardingCard && currentUserProfile.username){
+    userOnboardingCard.style = "display: none"
+  }
+})
+
+profileButton.addEventListener("click", () => {
+  usernameInput.value = currentUserProfile.username
+  const currentColor = document.querySelector(`input[name="profile_img"][value="${currentUserProfile.profile_img}"]`);
+  if (currentColor) {
+      currentColor.checked = true;
+  }
+  userOnboardingCard.style = "display:flex"
+})
+
 createAssignmentForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -818,4 +869,8 @@ function determineDateRange(date){
   }
 
   return "later"
+}
+
+function isValidUsername(username){
+  return username.trim() !== "" && !username.startsWith(" ")
 }

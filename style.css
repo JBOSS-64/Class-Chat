@@ -13,7 +13,7 @@ body, html{
 .link-button {
     background: none;
     border: none;
-    color: #0066cc; /* Standard link blue */
+    color: #0066cc;
     text-decoration: underline;
     cursor: pointer;
     padding: 0;
@@ -22,7 +22,7 @@ body, html{
 }
 
 .link-button:hover {
-    color: #004080; /* Darker blue on hover */
+    color: #004080;
 }
 
 #app-screen {
@@ -253,7 +253,7 @@ body, html{
 }
 
 .card-content {
-    background-color: #1e1e2f; /* Match your app's dark theme */
+    background-color: #1e1e2f;
     color: white;
     padding: 24px;
     gap: 12px;
@@ -365,4 +365,37 @@ body, html{
     font-size: 0.85rem;
     color: #64748b;   /* Even darker muted color for secondary metadata */
     font-family: monospace; /* Gives the ID a clean technical look */
+}
+
+.pfp-option .pfp{
+    width: 70px;
+    height: 70px;
+    border: 3px solid transparent;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.pfp-picker {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+.pfp-option {
+    cursor: pointer;
+    position: relative;
+}
+
+.pfp-option input[type="radio"] {
+    display: none;
+}
+
+.pfp-option img:hover {
+    transform: scale(1.08);
+}
+
+.pfp-option input[type="radio"]:checked + img {
+    border-color: #3b82f6;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
 }
