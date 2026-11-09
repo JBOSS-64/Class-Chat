@@ -6,6 +6,7 @@ const db = createClient('https://vrnxohudtrcxmcngvhne.supabase.co', 'sb_publisha
 //Auto login handling
 let currentUserId = null;
 let currentUserProfile = null;
+let onlineUsers = [];
 let currentClass = localStorage.getItem("last-class") || null;
 
 const profileImages = {
@@ -212,6 +213,12 @@ async function joinClass(classId){
 
   await loadClassList()
   loadClass(classId)
+  pushLiveUpdate(classId, "new-member")
+  classListContainer.querySelectorAll("li").forEach(item => {
+    if(item.dataset.id == classId){
+      item.classList.add("active")
+    }
+  });
   console.log("Joined class sucsessfully")
   return true
 }
@@ -228,6 +235,7 @@ async function addAssignment(classId, assignmentTitle, assignmentDescripton, due
 
   console.log("Added assignment sucsessfully")
   loadAssignmentList(currentClass)
+  pushLiveUpdate(classId, "assignment")
   return true
 }
 
@@ -240,6 +248,7 @@ async function updateUsername(updatedUsername){
     console.error("Failed to update username: " + updateUsernameError.message)
     return
   }
+  pushLiveUpdate(currentClass, "username")
   console.log("Updated username sucsessfully")
 }
 
@@ -247,9 +256,10 @@ async function updatePfp(pfp){
   const { error } = await db.from("profiles").update({profile_img: pfp}).eq("user_id", currentUserId)
 
   if (error){
-    console.error("Failed to update username: " + error.message)
+    console.error("Failed to update pfp: " + error.message)
     return
   }
+  pushLiveUpdate(currentClass, "pfp")
 }
 
 //Use this function to update all of the personal assignment details at once, likely when the user first enters the info
@@ -297,7 +307,7 @@ async function updateIsComplete(assignmentId, updatedCompletionStatus){
 //Gets the classes the user is enrolled in
 //Returns class_id, class_name, created_at, creator_id, subject, as well as the class_members array which has user_id and class_id
 async function getClasses(){
-  const { data, error } = await db.from("classes").select("*, class_members(*)").eq("class_members.user_id", currentUserId)
+  const { data, error } = await db.from("classes").select("*, class_members(*)").eq("class_members.user_id", currentUserId).eq("class_members.enrolled", true)
 
   if (error){
     console.error("Failed to fetch classes: " + error.message)
@@ -343,7 +353,26 @@ async function getUserAssignments(){
   return combinedClassData
 }
 
+async function pushLiveUpdate(classId, type){
+  let pushList = []
+  onlineUsers.forEach(user => {
+    if (user == currentUserId) return
+    pushList.push({user_id: user, class_id: classId, type: type})
+  })
+
+  const { error } = await db.from("live_updates").insert(pushList)
+
+  if(error){
+    console.error("Failed to push live updates: " + error.message)
+  }
+}
+
 let currentChatChannel = null
+let currentOnlineChannel = null
+
+
+//LIVE UPDATES
+
 
 //Subscribes the user to a class to listen for realtime updates
 //Right now it removes you from listening for updates in any other channels,
@@ -357,7 +386,45 @@ async function subscribeToClassChat(classId){
 
   currentChatChannel = db.channel(`class-chat-${classId}`)
 
-  currentChatChannel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `class_id=eq.${classId}`}, (payload) => {handleRecieveMessage(payload.new)}).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `class_id=eq.${classId}`}, (payload) => {handleEditMessage(payload.new)}).subscribe()
+  currentChatChannel
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `class_id=eq.${classId}`}, (payload) => {handleRecieveMessage(payload.new)})
+  .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `class_id=eq.${classId}`}, (payload) => {handleEditMessage(payload.new)})
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_updates', filter: `user_id=eq.${currentUserId}`}, (payload) => {handleRecieveUpdate(payload.new)})
+  .subscribe()
+}
+
+async function trackOnline(classId){
+  if (currentOnlineChannel){
+    await db.removeChannel(currentOnlineChannel)
+  }
+
+  currentOnlineChannel = db.channel(`class-presence-${classId}`, {
+    config: {
+      presence: {
+        key: currentUserId
+      },
+    },
+  });
+
+  currentOnlineChannel
+  .on('presence', { event: 'sync' }, () => {
+    const newState = currentOnlineChannel.presenceState()
+    onlineUsers = Object.keys(newState)
+    console.log(onlineUsers)
+  })
+  .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+    //console.log('join', key, newPresences)
+  })
+  .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+    //console.log('leave', key, leftPresences)
+  })
+  .subscribe(async (status) => {
+    if (status == 'SUBSCRIBED') {
+      await currentOnlineChannel.track({
+        user_id: currentUserId
+      })
+    }
+  })
 }
 
 //Adds a message to the messages table in supabase
@@ -390,8 +457,20 @@ const messageContainer = document.getElementById("message-container")
 
 //Function to handle reciving new messages
 //Adds recieved messages to the message container on the UI
-function handleRecieveMessage(message){
+async function handleRecieveMessage(message){
   let senderProfile = getProfileById(message.user_id)
+
+  if (!senderProfile){
+    const { data, error } = await db.from("profiles").select().eq("user_id", message.user_id).single()
+    if (error) console.error("Failed to load profile: " + error.message)
+    if(data){
+      profileCache.push(data)
+      senderProfile = data
+    } else {
+      senderProfile = {username: "Unknown", profile_img: "grey"}
+    }
+  }
+
   let scrollBottom = messageContainer.scrollTop + messageContainer.clientHeight >= messageContainer.scrollHeight - 5;
 
   const newMessageDiv = document.createElement("div")
@@ -401,7 +480,7 @@ function handleRecieveMessage(message){
   messageDiv.classList.add("message")
 
   const usernameSpan = document.createElement("span")
-  usernameSpan.classList.add("username")
+  usernameSpan.className = `username${message.user_id == currentUserId ? " user-username":""}`
   usernameSpan.textContent = senderProfile.username
 
   const textP = document.createElement("p")
@@ -410,7 +489,7 @@ function handleRecieveMessage(message){
 
   const pfpImg = document.createElement("img")
   pfpImg.src = profileImages[getProfileById(message.user_id).profile_img]
-  pfpImg.classList.add("pfp")
+  pfpImg.className = `pfp${message.user_id == currentUserId ? " user-pfp":""}`
 
   newMessageDiv.appendChild(usernameSpan)
   newMessageDiv.appendChild(textP)
@@ -430,6 +509,22 @@ function handleEditMessage(message){
   console.log("Recived edit of message: ", message)
 }
 
+async function handleRecieveUpdate(update){
+  const { error } = await db.from("live_updates").delete().eq("update_id", update.update_id)
+  switch (update.type){
+    case "assignment":
+      loadAssignmentList(currentClass)
+      break;
+    case "new-member":
+    case "username":
+    case "pfp":
+      await loadClassProfiles(currentClass)
+      loadPastMessages(currentClass)
+      break;
+    default:
+      return
+  }
+}
 //UI HANDLING
 
 let profileCache = []
@@ -482,12 +577,12 @@ async function loadPastMessages(classId){
     return
   }
   messageContainer.innerHTML = messages.map(msg => {
-    let profile = getProfileById(msg.user_id)
+    let profile = getProfileById(msg.user_id) || {}
     return `
     <div class = "message">
-      <img src = "${profileImages[profile.profile_img]}" class = "pfp${msg.user_id == currentUserId ? " user-pfp":""}">
+      <img src = "${profileImages[profile.profile_img] ? profileImages[profile.profile_img] : "assets/default-pfps/deleted.svg"}" class = "pfp${msg.user_id == currentUserId ? " user-pfp":""}">
       <div class = "message-content">
-        <span class = "username${msg.user_id == currentUserId ? " user-username":""}">${profile.username}</span>
+        <span class = "username${msg.user_id == currentUserId ? " user-username":""}">${profile.username ? profile.username : "[deleted]"}</span>
         <p class = "message-text">${msg.text}</p>
       </div>
     </div>
@@ -649,6 +744,7 @@ async function loadClass(classId){
   await loadClassProfiles(classId)
   await loadPastMessages(classId)
   await subscribeToClassChat(classId)
+  await trackOnline(classId)
   await loadAssignmentList(classId)
   localStorage.setItem("last-class", classId)
 }
@@ -794,6 +890,12 @@ accountSetupForm.addEventListener("submit", async (e) => {
   if (currentUserProfile) {
     currentUserProfile.username = newUsername
     currentUserProfile.profile_img = newProfileImg
+  }
+
+  const cachedProfile = profileCache.find(p => p.user_id == currentUserId);
+  if (cachedProfile) {
+    cachedProfile.username = newUsername;
+    cachedProfile.profile_img = newProfileImg;
   }
 
   document.querySelectorAll(".user-pfp").forEach((profilePic) => {
