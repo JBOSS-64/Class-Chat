@@ -43,7 +43,10 @@ export function determineDateRange(date){
 }
 
 export function isValidUsername(username){
-  return username.trim() !== "" && !username.startsWith(" ")
+  if (!username || username.trim() === "") return false;
+  if (username.startsWith(" ")) return false;
+  if (username.length > 50) return false;
+  return true;
 }
 
 export function getProfileById(userId){

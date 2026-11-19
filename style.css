@@ -140,6 +140,7 @@ body, html{
     display: flex;
     flex-direction: column;
     height: 100%;
+    min-width: 0;
 }
 
 #chat-header {
@@ -176,12 +177,14 @@ body, html{
     gap: 12px;
     flex-direction: row;
     align-items: flex-start;
+    max-width: 100%;
 }
 
 .message-content {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    overflow: hidden;
     flex: 1;
 }
 
@@ -195,6 +198,10 @@ body, html{
     color: #94a3b8;
     margin-bottom: 4px;
     display: block;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 #chat-input-area {
@@ -258,7 +265,9 @@ body, html{
     padding: 24px;
     gap: 12px;
     border-radius: 12px;
-    width: 350px;
+    width:fit-content;
+    min-width: 250px;
+    max-width: 90vw;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: center;
@@ -398,4 +407,30 @@ body, html{
 .pfp-option input[type="radio"]:checked + img {
     border-color: #3b82f6;
     box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.profile-info{
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    max-width: 25vw;
+    gap: 10px;
+}
+
+.profile-info img{
+    width: 80px;
+    height: 80px;
+}
+
+.card-content.profile-display{
+    align-items: flex-start;
+    text-align: left;
+    flex-direction: row;
+}
+
+.user-username{
+    text-overflow: ellipsis;
+    max-width: 100%;
+    overflow: hidden;
+    white-space: wrap;
 }

@@ -2,6 +2,7 @@ import { db, profileImages } from "./db.js"
 import { state } from "./state.js"  
 import { els } from "./elements.js"
 import { pushLiveUpdate } from "./liveupdates.js"
+import { isValidUsername } from "./helper.js"
 
 export async function loadClassProfiles(classId){
   const { data, error } = await db.from("profiles").select("*, class_members!inner(*)").eq("class_members.class_id", classId)
@@ -37,6 +38,10 @@ export async function loadUserProfile(){
 }
 
 export async function updateUsername(updatedUsername){
+  if (!isValidUsername(updatedUsername)){
+    console.error("Name is invalid")
+    return
+  }
   //Updates the username for the user id specified by the .eq()
   //RLS prevents users from updating a different user's profile
   const { error: updateUsernameError } = await db.from("profiles").update({username: updatedUsername}).eq("user_id", state.currentUserId)

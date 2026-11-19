@@ -156,11 +156,15 @@
             </form>
         </div>
     </div>
-    <div id = "profile-card" class = "card">
-        <div class = "card-content">
-            <div class = "profile-display">
-                <span class = "user-username"></span>
+    <div id = "profile-card" class = "card" style="display:none">
+        <div class = "card-content profile-display">
+            <div class = "profile-info">
                 <img src = "assets/default-pfps/grey.svg" class = "pfp user-pfp">
+                <span class = "user-username"></span>
+            </div>
+            <div class = "profile-buttons">
+                <button id = "edit-profile-button">Edit Profile</button>
+                <button id = "sign-out-button">Sign Out</button>
             </div>
         </div>
     </div>
