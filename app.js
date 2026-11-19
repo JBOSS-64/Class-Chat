@@ -164,6 +164,9 @@ async function signOut() {
 
 //Add a class to the classes table
 async function createClass(className, classSubject){
+  if (!className || !classSubject){
+    return
+  }
   //Inserts a class to the classes table with the specified parameters
   //Returns the object added to the table to the classData object with the .select()
   //The .single() makes it a single object instead of having it nested so that stuff like classData.class_id will work
@@ -581,7 +584,7 @@ async function loadPastMessages(classId){
     return `
     <div class = "message">
       <img src = "${profileImages[profile.profile_img] ? profileImages[profile.profile_img] : "assets/default-pfps/deleted.svg"}" class = "pfp${msg.user_id == currentUserId ? " user-pfp":""}">
-      <div class = "message-content">
+      <div class = "message-content" data-userId = ${msg.user_id}>
         <span class = "username${msg.user_id == currentUserId ? " user-username":""}">${profile.username ? profile.username : "[deleted]"}</span>
         <p class = "message-text">${msg.text}</p>
       </div>
